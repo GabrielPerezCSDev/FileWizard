@@ -1,6 +1,5 @@
 use file_wizard_db::init_db;
 
-
 pub fn initialize_backend() {
     // Initialize the database
     if let Err(e) = init_db() {
@@ -9,5 +8,5 @@ pub fn initialize_backend() {
         println!("Database initialized successfully.");
     }
 
-    println!("Backend initialized.");
+
 }
