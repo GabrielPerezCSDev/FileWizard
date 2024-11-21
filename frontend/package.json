@@ -1,0 +1,29 @@
+{
+  "name": "frontend",
+  "version": "1.0.0",
+  "description": "",
+  "main": "electron/main.js",
+  "scripts": {
+    "react:dev": "vite",
+    "react:build": "vite build",
+    "electron:dev": "electron .",
+    "electron:build": "electron-builder",
+    "dev": "concurrently \"npm run react:dev\" \"wait-on http://localhost:3000 && npm run electron:dev\"",
+    "build": "npm run react:build && npm run electron:build"
+},
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "devDependencies": {
+    "@vitejs/plugin-react": "^4.3.3",
+    "concurrently": "^9.1.0",
+    "electron": "^33.2.0",
+    "electron-builder": "^25.1.8",
+    "vite": "^5.4.11",
+    "wait-on": "^8.0.1"
+  },
+  "dependencies": {
+    "react": "^18.3.1",
+    "react-dom": "^18.3.1"
+  }
+}
