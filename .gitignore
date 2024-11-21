@@ -1,3 +1,28 @@
+# Rust-specific
 target/
-logs/
+**/*.rs.bk
+
+# Node.js-specific
+node_modules/
+dist/
+.vite/
+*.log
+
+# Environment Files
 .env
+
+# Database
+db/file_wizard.db
+
+# Logs
+logs/
+
+# Operating System Files
+.DS_Store
+Thumbs.db
+*.swp
+
+# Temporary or backup files
+*.bak
+*.tmp
+*.lock
