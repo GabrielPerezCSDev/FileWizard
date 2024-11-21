@@ -1,0 +1,16 @@
+[workspace]
+members = [
+    "backend",
+    "db",
+    "utils"
+]
+
+[dependencies]
+file_wizard_backend = { path = "backend" }
+
+
+[package]
+name = "file_wizard"
+version = "0.1.0"
+edition = "2021"
+
