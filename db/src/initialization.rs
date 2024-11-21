@@ -1,6 +1,6 @@
-use rusqlite::{Connection, Result};
-use std::path::Path;
 use utils::get_base_path;
+use rusqlite::{Error as RusqliteError};
+
 
 pub fn initialize_database() -> rusqlite::Result<()> {
     let db_path = get_base_path().join("db").join("file_wizard.db");
@@ -8,7 +8,10 @@ pub fn initialize_database() -> rusqlite::Result<()> {
     // Ensure the `db/` directory exists
     let db_dir = db_path.parent().unwrap();
     if !db_dir.exists() {
-        std::fs::create_dir_all(db_dir); // Create the directory if it doesn't exist
+        std::fs::create_dir_all(db_dir).map_err(|e| {
+            // Map `std::io::Error` to `rusqlite::Error`
+            RusqliteError::ToSqlConversionFailure(Box::new(e))
+        })?;
     }
 
     if db_path.exists() {
