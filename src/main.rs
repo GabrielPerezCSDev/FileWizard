@@ -1,14 +1,20 @@
-use file_wizard_backend::initialize_backend;
-use std::thread;
-use std::time::Duration;
+use file_wizard_ports::routers::router::RouterRegistry;
+use file_wizard_ports::routers::search_router::SearchRouter;
+use file_wizard_db::init_db;
 
-fn main() {
-    // Initialize the backend (and database)
-    initialize_backend();
+#[actix_web::main]
+async fn main() {
 
-    // Keep the backend running
-    println!("Rust handler running. Press Ctrl+C to exit.");
-    loop {
-        thread::sleep(Duration::from_secs(1));
+    print!("\n\nStarting File Wizard backend tech stack! \n\n");
+    // Initialize the database
+    if let Err(e) = init_db() {
+        eprintln!("Failed to initialize the database: {}", e);
+    } else {
+        println!("Database initialized successfully.");
     }
+
+    // Set up routers
+    let mut router_registry = RouterRegistry::new();
+    router_registry.register(Box::new(SearchRouter::new()));
+    router_registry.start().await;
 }

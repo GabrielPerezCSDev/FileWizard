@@ -4,12 +4,13 @@ version = "0.1.0"
 edition = "2021"
 
 [dependencies]
-rusqlite = "0.28"       # For database interactions
-serde = { version = "1.0", features = ["derive"] } # For JSON serialization (if needed)
-actix-web = "4.0"       # For backend web server (optional, based on implementation)
-tokio = { version = "1.0", features = ["full"] }  # For async runtime (optional)
-log = "0.4"             # Logging
+rusqlite = { workspace = true }
+serde = { workspace = true }
+actix-web = { workspace = true }
+log = { workspace = true }
 
-utils = { path = "../utils" } # Link to utils crate
-file_wizard_db = { path = "../db" }  # Link to the database crate
-ports = { path = "../ports" }        # Link to the ports crate
+utils = { path = "../utils" }
+
+[lib]
+name = "file_wizard_backend"
+path = "src/lib.rs"

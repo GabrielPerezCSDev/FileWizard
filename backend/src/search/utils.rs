@@ -7,6 +7,7 @@ pub struct Search {
 
 impl Search {
     pub fn new() -> Self {
+        println!("[Search] created");
         Self { curr_directory: None }
     }
     pub fn execute_search(&self) {

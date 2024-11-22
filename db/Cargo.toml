@@ -4,8 +4,12 @@ version = "0.1.0"
 edition = "2021"
 
 [dependencies]
-rusqlite = { version = "0.28", features = ["bundled"] }
-serde = { version = "1.0", features = ["derive"] }  # For serialization and deserialization
-log = "0.4"               # For logging database operations
+rusqlite = { workspace = true }
+serde = { workspace = true }
+log = { workspace = true }
 
 utils = { path = "../utils" }
+
+[lib]
+name = "file_wizard_db"
+path = "src/lib.rs"

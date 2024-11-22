@@ -4,14 +4,26 @@ members = [
     "db",
     "utils",
     "ports",
+    "controllers",
 ]
 
 [dependencies]
 file_wizard_backend = { path = "backend" }
+file_wizard_db = { path = "db" }
+file_wizard_ports = { path = "ports" }
+actix-web = "4.0"  # Added actix-web here
 
+[workspace.dependencies]
+rusqlite = { version = "0.28", features = ["bundled"] }
+serde = { version = "1.0", features = ["derive"] }
+log = "0.4"
+actix-web = "4.0"
 
 [package]
 name = "file_wizard"
 version = "0.1.0"
 edition = "2021"
 
+[[bin]]
+name = "file_wizard"
+path = "src/main.rs"

@@ -1,5 +1,14 @@
 [package]
-name = "ports"
+name = "file_wizard_ports"
 version = "0.1.0"
 edition = "2021"
 
+[dependencies]
+file_wizard_controllers = { path = "../controllers" }
+actix-web = "4.0"
+async-trait = "0.1"
+futures = "0.3"
+
+[lib]
+name = "file_wizard_ports"
+path = "src/lib.rs"
