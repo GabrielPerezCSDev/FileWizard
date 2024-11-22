@@ -10,5 +10,6 @@ actix-web = "4.0"       # For backend web server (optional, based on implementat
 tokio = { version = "1.0", features = ["full"] }  # For async runtime (optional)
 log = "0.4"             # Logging
 
-utils = { path = "../utils" } #link to utils crate
+utils = { path = "../utils" } # Link to utils crate
 file_wizard_db = { path = "../db" }  # Link to the database crate
+ports = { path = "../ports" }        # Link to the ports crate

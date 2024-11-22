@@ -1,14 +1,16 @@
-use crate::search::utils::search_fd;
-use std;
+use crate::search::utils::Search;
+use std::thread;
+use std::sync::{Arc, Mutex};
+use std::time::Duration;
 
 #[derive(Clone, Copy, PartialEq, Debug)]
-enum State {
+pub enum State {
     Running,
     Paused,
     Stopped,
 }
 
-pub fn spawn_thread(state: Arc<Mutex<State>>) -> thread::JoinHandle<()> {
+pub fn spawn_thread(search: Arc<Mutex<Search>>, state: Arc<Mutex<State>>) -> thread::JoinHandle<()> {
     // Create a new thread
     thread::spawn(move || {
         // Thread logic here
@@ -18,7 +20,7 @@ pub fn spawn_thread(state: Arc<Mutex<State>>) -> thread::JoinHandle<()> {
             let current_state = *state.lock().unwrap();
             match current_state {
                 State::Running => {
-                    search_fd();
+                    search.lock().unwrap().execute_search();
                     thread::sleep(Duration::from_secs(1));
                 }
                 State::Paused => {
@@ -32,7 +34,7 @@ pub fn spawn_thread(state: Arc<Mutex<State>>) -> thread::JoinHandle<()> {
             }
             thread::yield_now(); // Ensure rescheduling
         }
-    });
+    })
 }
 
 pub fn pause_thread(state: Arc<Mutex<State>>) {

@@ -1,6 +1,7 @@
 use file_wizard_db::init_db;
+use ports::routers::{RouterRegistry, SearchRouter};
+use backend::search::search_controller::SearchController;
 mod search;
-use search::thread_manager::spawn_thread as search_thread;
 //mod general;
 
 pub fn initialize_backend() {
@@ -11,9 +12,13 @@ pub fn initialize_backend() {
         println!("Database initialized successfully.");
     }
 
-    
-    // Spawn threads for search and general
-    search_thread();
-    //general::thread_manager::spawn_thread();
+    // Create controllers
+    let search_controller = SearchController::new();
+
+    // Set up routers
+    let search_router = SearchRouter::new(search_controller); // Pass controller to router
+    let mut router_registry = RouterRegistry::new();
+    router_registry.register(Box::new(search_router)); // Add router to registry
+    router_registry.start(); // Start all registered routers
 
 }
