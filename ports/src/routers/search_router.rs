@@ -118,7 +118,7 @@ impl SearchRouter {
         }
     }
 
-    async fn set_current_directory(
+    async fn set_root_search_directory(
         controller: web::Data<Arc<Mutex<SearchController>>>,
         item: web::Json<SetDirectoryRequest>,
     ) -> impl Responder {
@@ -130,7 +130,7 @@ impl SearchRouter {
         // Offload the blocking operation to a thread pool
         let result = web::block(move || {
             let controller = controller_clone.lock().unwrap();
-            controller.set_curr_directory(new_dir);
+            controller.set_root_search_directory(new_dir);
         })
         .await;
 
@@ -168,7 +168,7 @@ impl Router for SearchRouter {
                 .route("/search/stop", web::get().to(Self::search_stop))
                 .route("/search/resume", web::get().to(Self::search_resume))
                 .route("/search/pause", web::get().to(Self::search_pause))
-                .route("/search/set_directory", web::post().to(Self::set_current_directory)) 
+                .route("/search/set_directory", web::post().to(Self::set_root_search_directory)) 
         })
         .bind("127.0.0.1:8080")
         .expect("[SearchRouter] Failed to bind to address")

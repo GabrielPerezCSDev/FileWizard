@@ -79,12 +79,12 @@ impl SearchController {
         *self.thread_state.lock().unwrap()
     }
 
-    pub fn get_curr_directory(&self) -> Option<String> {
-        self.search.lock().unwrap().get_curr_directory()
+    pub fn get_root_search_directory(&self) -> Option<String> {
+        self.search.lock().unwrap().get_root_search_directory()
     }
 
-    pub fn set_curr_directory(&self, new_directory: String) {
-        self.search.lock().unwrap().set_curr_directory(new_directory);
+    pub fn set_root_search_directory(&self, new_directory: String) {
+        self.search.lock().unwrap().set_root_search_directory(new_directory);
     }
 
 }
