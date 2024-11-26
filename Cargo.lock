@@ -522,6 +522,8 @@ dependencies = [
  "async-trait",
  "file_wizard_controllers",
  "futures",
+ "serde",
+ "serde_json",
 ]
 
 [[package]]

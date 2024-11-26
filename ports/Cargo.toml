@@ -8,6 +8,8 @@ file_wizard_controllers = { path = "../controllers" }
 actix-web = "4.0"
 async-trait = "0.1"
 futures = "0.3"
+serde = { version = "1.0", features = ["derive"] }
+serde_json = "1.0"
 
 [lib]
 name = "file_wizard_ports"

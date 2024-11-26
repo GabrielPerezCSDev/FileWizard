@@ -3,6 +3,9 @@
 #[derive(Debug)]
 pub struct Search {
     curr_directory: Option<String>,
+    //map of files
+    //map of folders
+
 }
 
 impl Search {
@@ -12,7 +15,7 @@ impl Search {
     }
     pub fn execute_search(&self) {
         println!(
-            "Executing search in {:?}",
+            "[Search] Executing search in {:?}",
             self.curr_directory.clone().unwrap_or_else(|| "No directory set".to_string())
         );
         // Add actual search logic here

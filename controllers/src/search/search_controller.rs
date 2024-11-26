@@ -21,8 +21,16 @@ impl SearchController {
         }
     }
 
-    pub async fn start_search(&self) {
-        let mut state = self.thread_state.lock().unwrap();
+    // Start the search thread
+    pub fn start_search(&self) {
+        let mut state = match self.thread_state.lock() {
+            Ok(lock) => lock,
+            Err(poisoned) => {
+                eprintln!("[SearchController] Mutex poisoned: {:?}", poisoned);
+                return;
+            }
+        };
+
         if *state == State::Stopped {
             println!("[SearchController] Starting search thread...");
             let search_clone = Arc::clone(&self.search);
