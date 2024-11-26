@@ -68,7 +68,7 @@ fn insert_file_extension(metadata: &mut HashMap<String, String>, path: &Path) {
 // Folder-specific metadata
 pub fn folder_specific_metadata(metadata: &mut HashMap<String, String>, path: &Path) {
     file_folder_metadata(metadata, path);
-
+    
     if let Ok(meta) = fs::metadata(path) {
         if meta.is_dir() {
             //metadata.insert("is_directory".to_string(), "true".to_string());

@@ -2,14 +2,14 @@
 use std::path::Path;
 use std::collections::HashMap;
 use std::sync::{ Arc, Mutex };
-use crate::directory::path_map::PathMap;
-use crate::directory::metadata::folder_specific_metadata;
-use crate::directory::path_type::PathType;
+//use crate::model::path_map::PathMap;
+use crate::model::metadata::folder_specific_metadata;
+use crate::model::path_type::PathType;
 
 use std::fs;
-use crate::directory::file::File;
+use crate::model::file::File;
 // The Folder struct definition
-#[derive(Clone)]
+#[derive(Clone, Debug)]
 pub struct Folder {
     pub name: String,
     pub url: String,
@@ -102,7 +102,36 @@ impl Folder {
         
     }
     
-    
+    pub fn to_string(&self) -> String {
+        let mut result = String::new();
+
+        result.push_str("\n====================\n");
+        result.push_str(&format!("Folder Name: {}\n", self.name));
+        result.push_str(&format!("URL: {}\n", self.url));
+        result.push_str(&format!("Index: {}\n", self.index));
+        result.push_str(&format!("Number of Children: {}\n", self.num_children));
+        
+        if let Some(parent) = &self.parent {
+            let parent_name = parent.lock().unwrap().name.clone();
+            result.push_str(&format!("Parent: {}\n", parent_name));
+        } else {
+            result.push_str("Parent: None\n");
+        }
+        
+        result.push_str("Metadata:\n");
+        for (key, value) in &self.metadata {
+            result.push_str(&format!("  {}: {}\n", key, value));
+        }
+
+        result.push_str("Children:\n");
+        for (i, child) in self.children.iter().enumerate() {
+            result.push_str(&format!("  [{}] {}\n", i + 1, child.to_string()));
+        }
+
+        result.push_str("====================\n");
+
+        result
+    }
     
     
     

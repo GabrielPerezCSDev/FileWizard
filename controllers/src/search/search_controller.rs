@@ -36,7 +36,7 @@ impl SearchController {
             let search_clone = Arc::clone(&self.search);
             let state_clone = Arc::clone(&self.thread_state);
             spawn_thread(search_clone, state_clone);
-            *state = State::Running;
+            *state = State::RunningNonInit;
         } else {
             println!("[SearchController] Search thread is already running or paused.");
         }
@@ -44,7 +44,7 @@ impl SearchController {
 
     // Pause the search thread
     pub fn pause_search(&self) {
-        if *self.thread_state.lock().unwrap() == State::Running {
+        if *self.thread_state.lock().unwrap() == State::RunningInit {
             println!("[SearchController] Pausing search thread...");
             pause_thread(Arc::clone(&self.thread_state));
         } else {

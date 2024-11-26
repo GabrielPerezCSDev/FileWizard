@@ -5,7 +5,8 @@ use std::time::Duration;
 
 #[derive(Clone, Copy, PartialEq, Debug)]
 pub enum State {
-    Running,
+    RunningInit,
+    RunningNonInit,
     Paused,
     Stopped,
 }
@@ -14,12 +15,20 @@ pub fn spawn_thread(search: Arc<Mutex<Search>>, state: Arc<Mutex<State>>) -> thr
     // Create a new thread
     thread::spawn(move || {
         // Thread logic here
-        println!("[search thread] started");
+        println!("[Search Thread] started");
         loop {
             // Check the thread state
             let current_state = *state.lock().unwrap();
             match current_state {
-                State::Running => {
+                State::RunningNonInit => {
+                    println!("[Search Thread] Initializing the search");
+                    search.lock().unwrap().initialize_search();
+                    thread::sleep(Duration::from_secs(1));
+                    // Transition to RunningInit
+                    let mut state_guard = state.lock().unwrap();
+                    *state_guard = State::RunningInit;
+                    println!("[Search Thread] State changed to RunningInit");
+                }State::RunningInit => {
                     search.lock().unwrap().execute_search();
                     thread::sleep(Duration::from_secs(1));
                 }
@@ -45,7 +54,7 @@ pub fn pause_thread(state: Arc<Mutex<State>>) {
 
 pub fn resume_thread(state: Arc<Mutex<State>>) {
     let mut thread_state = state.lock().unwrap();
-    *thread_state = State::Running;
+    *thread_state = State::RunningInit;
     println!("Thread resumed.");
 }
 

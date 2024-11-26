@@ -1,14 +1,14 @@
 // Required imports
 use std::path::Path;
 use std::collections::HashMap;
-use crate::directory::path_map::PathMap;
-use crate::directory::folder::Folder; // Import Folder since File references Folder
+//use crate::model::path_map::PathMap;
+use crate::model::folder::Folder; // Import Folder since File references Folder
 use std::sync::{Arc, Mutex};
 // Import the function that handles file-specific metadata
-use crate::directory::metadata::file_specific_metadata;
+use crate::model::metadata::file_specific_metadata;
 
 // The File struct definition
-#[derive(Clone)]
+#[derive(Clone, Debug)]
 pub struct File {
     pub name: String,
     pub url: String,
