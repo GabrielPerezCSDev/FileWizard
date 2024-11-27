@@ -16,10 +16,20 @@ pub fn file_folder_metadata(metadata: &mut HashMap<String, String>, path: &Path)
     }
 }
 
-// Insert size into metadata
+
+
 fn insert_size(metadata: &mut HashMap<String, String>, meta: &Metadata) {
     let size_in_bytes = meta.len();
     let readable_size = format_size(size_in_bytes);
+
+    metadata.insert("raw_size".to_string(), size_in_bytes.to_string()); // Store raw byte size
+    metadata.insert("size".to_string(), readable_size); // Store human-readable size
+}
+
+pub fn update_size(metadata: &mut HashMap<String, String>, size: u64) {
+    let readable_size = format_size(size);
+    // Update both raw and formatted size
+    metadata.insert("raw_size".to_string(), size.to_string());
     metadata.insert("size".to_string(), readable_size);
 }
 
@@ -93,13 +103,13 @@ pub fn is_accessible(metadata: &Metadata) -> bool {
     }
 }
 
-// Function to format file sizes into human-readable strings
+// Function to format file sizes into human-readable strings using metric prefixes
 fn format_size(bytes: u64) -> String {
-    const KB: f64 = 1024.0;
-    const MB: f64 = KB * 1024.0;
-    const GB: f64 = MB * 1024.0;
-    const TB: f64 = GB * 1024.0;
-    const PB: f64 = TB * 1024.0;
+    const KB: f64 = 1000.0;
+    const MB: f64 = KB * 1000.0;
+    const GB: f64 = MB * 1000.0;
+    const TB: f64 = GB * 1000.0;
+    const PB: f64 = TB * 1000.0;
 
     let size = bytes as f64;
 

@@ -33,18 +33,18 @@ impl PathMap {
    
     pub fn add(&mut self, p: PathType) {
         match p {
-            PathType::File(file) => {
-                let url = file.url.clone();
-                self.files.insert(url, Arc::new(Mutex::new(file)));
-            },
+            PathType::File(file_arc) => {
+                let url = file_arc.lock().unwrap().url.clone();
+                self.files.insert(url, Arc::clone(&file_arc)); // Shared ownership
+            }
             PathType::Folder(folder_arc) => {
                 let folder = folder_arc.lock().unwrap();
                 let url = folder.url.clone();
                 self.folders.insert(url, Arc::clone(&folder_arc));
-            },
+            }
             PathType::None => {
-                // Maybe logf a warning here...
-            },
+                println!("[PathMap] Warning: Attempted to add PathType::None.");
+            }
         }
     }
 
@@ -64,10 +64,10 @@ impl PathMap {
     
     pub fn get(&self, url: &str) -> Option<Arc<Mutex<PathType>>> {
         if let Some(folder) = self.folders.get(url) {
-            return Some(Arc::new(Mutex::new(PathType::Folder(Arc::clone(folder)))));
+            return Some(Arc::new(Mutex::new(PathType::Folder(Arc::clone(folder))))); // Wrap Folder
         }
         if let Some(file) = self.files.get(url) {
-            return Some(Arc::new(Mutex::new(PathType::File(Arc::clone(file).lock().unwrap().clone()))));
+            return Some(Arc::new(Mutex::new(PathType::File(Arc::clone(file))))); // Wrap File
         }
         None
     }
@@ -86,7 +86,7 @@ impl PathMap {
             return Some(PathType::Folder(folder));
         }
         if let Some(file) = self.files.remove(url) {
-            return Some(PathType::File(file.lock().unwrap().clone()));
+            return Some(PathType::File(file));
         }
         None
     }

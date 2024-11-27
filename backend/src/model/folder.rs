@@ -3,11 +3,12 @@ use std::path::Path;
 use std::collections::HashMap;
 use std::sync::{ Arc, Mutex };
 //use crate::model::path_map::PathMap;
+
 use crate::model::metadata::folder_specific_metadata;
+use crate::model::metadata::update_size as update_metadata_size;
 use crate::model::path_type::PathType;
 
-use std::fs;
-use crate::model::file::File;
+
 // The Folder struct definition
 #[derive(Clone, Debug)]
 pub struct Folder {
@@ -54,10 +55,8 @@ impl Folder {
         let cloned_url = url.clone();
 
         // Borrow the index from the parent folder if it exists
-        let index = match &parent {
-            Some(p) => p.lock().unwrap().index + 1,
-            None => 0,
-        };
+        let index = pwd_index;
+        
         let num_children = 0;
         let mut folder = Folder {
             name,
@@ -80,10 +79,46 @@ impl Folder {
 
     // Add a child to the folder's children
     pub fn add_child(&mut self, child: PathType) {
-        self.children.push(child);
+        self.children.push(child.clone());
         self.num_children += 1;
         //update meta data
         self.metadata.insert("Number of children".to_string(), self.num_children.to_string());
+        // Add the raw size of the child to the folder's size
+        let child_size = match &child {
+        PathType::File(file_arc) => {
+            // Lock the file and extract the raw_size
+            if let Ok(file) = file_arc.lock() {
+                file.get_raw_size()
+            } else {
+                0
+            }
+        }
+        PathType::Folder(folder_arc) => {
+            // Lock the folder and extract the raw_size
+            if let Ok(folder) = folder_arc.lock() {
+                folder.get_raw_size()
+            } else {
+                0
+            }
+        }, &PathType::None => todo!()
+    };
+        println!("[Folder] floating value to this folder {}: {}",self.name, child_size);
+        self.update_size(child_size);
+        
+
+        // Propagate the size to all parent folders
+    let mut current_parent = self.parent.clone();
+    while let Some(parent_arc) = current_parent {
+        if let Ok(mut parent) = parent_arc.lock() {
+            println!("[Folder] Updating parent folder '{}'", parent.name);
+            parent.update_size(child_size);
+            current_parent = parent.parent.clone(); // Move up to the next parent
+        } else {
+            println!("[Folder] Failed to lock parent folder.");
+            break;
+        }
+    }
+
     }
 
     // Getter for metadata
@@ -95,12 +130,26 @@ impl Folder {
         &self.name
     }
 
-   
+    pub fn update_size(&mut self, size: u64) {
+        let current_size = self
+        .metadata
+        .get("raw_size")
+        .and_then(|s| s.parse::<u64>().ok())
+        .unwrap_or(0);
 
-    // Method to discover immediate children and add them to `children`
-    pub fn discover_immediate_children(&mut self) {
-        
+        // Calculate the new raw size
+        let new_size = current_size + size;
+        update_metadata_size(&mut self.metadata, new_size);
+        // Debugging output
+        println!(
+        "[Folder] Updated size for folder '{}' after adding {}: raw_size={:?} (formatted={:?})",
+        self.name,
+        size,
+        self.metadata.get("raw_size"),
+        self.metadata.get("size")
+        );
     }
+
     
     pub fn to_string(&self) -> String {
         let mut result = String::new();
@@ -134,7 +183,12 @@ impl Folder {
     }
     
     
-    
+    pub fn get_raw_size(&self) -> u64 {
+        self.metadata
+            .get("raw_size")
+            .and_then(|s| s.parse::<u64>().ok())
+            .unwrap_or(0)
+    }
 
 
 }

@@ -47,4 +47,12 @@ impl File {
     pub fn get_metadata(&self) -> &HashMap<String, String> {
         &self.metadata
     }
+
+    // Method to get the raw size of the file from metadata
+    pub fn get_raw_size(&self) -> u64 {
+        self.metadata
+            .get("raw_size") // Look for the raw_size key in metadata
+            .and_then(|size| size.parse::<u64>().ok()) // Parse the value as u64
+            .unwrap_or(0) // Default to 0 if parsing fails
+    }
 }

@@ -83,8 +83,8 @@ impl SearchController {
         self.search.lock().unwrap().get_root_search_directory()
     }
 
-    pub fn set_root_search_directory(&self, new_directory: String) {
-        self.search.lock().unwrap().set_root_search_directory(new_directory);
+    pub fn set_root_search_directory(&self, new_directory: String) -> bool{
+        self.search.lock().unwrap().set_root_search_directory(new_directory)
     }
 
 }

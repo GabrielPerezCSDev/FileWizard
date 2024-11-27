@@ -534,6 +534,7 @@ dependencies = [
  "actix-web",
  "chrono",
  "log",
+ "rand",
  "rusqlite",
  "serde",
  "utils",

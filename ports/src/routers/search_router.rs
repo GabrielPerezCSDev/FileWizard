@@ -130,15 +130,21 @@ impl SearchRouter {
         // Offload the blocking operation to a thread pool
         let result = web::block(move || {
             let controller = controller_clone.lock().unwrap();
-            controller.set_root_search_directory(new_dir);
+            controller.set_root_search_directory(new_dir)
         })
         .await;
 
         match result {
-            Ok(_) => HttpResponse::Ok().body("[SearchRouter] Current directory set successfully!"),
+            Ok(success) => {
+                if success {
+                    HttpResponse::Ok().body("[SearchRouter] Current directory set successfully!")
+                } else {
+                    HttpResponse::BadRequest().body("[SearchRouter] Invalid directory path provided.")
+                }
+            }
             Err(e) => {
                 eprintln!("[SearchRouter] Error setting directory: {:?}", e);
-                HttpResponse::InternalServerError().body("Failed to set current directory.")
+                HttpResponse::InternalServerError().body("[SearchRouter] Failed to set current directory.")
             }
         }
     }
