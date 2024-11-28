@@ -42,6 +42,7 @@ File Wizard uses a layered architecture:
 For detailed information about the architecture, design, and implementation, refer to the [File Wizard Documentation](File_Wizard_Documentation.pdf).
 
 ## Getting Started
+**Note**: There will be an installer built for users to run the program and install in their file system at a later build release.
 1. Clone the repository:  
    ```bash
    git clone https://github.com/GabrielPerezCSDev/FileWizard.git
