@@ -5,15 +5,14 @@
   "main": "electron/main.js",
   "scripts": {
     "react:dev": "vite",
-    "react:build": "vite build",
     "electron:dev": "electron .",
-    "electron:build": "electron-builder",
-    "backend:dev": "cargo run --manifest-path ../Cargo.toml",
     "frontend:dev": "concurrently \"npm run react:dev\" \"npm run electron:dev\"",
-    "dev-test": "concurrently -k -n 'Backend,Frontend' -c 'bgBlue.bold,bgGreen.bold' \"npm run backend:dev\" \"npm run react:dev\"",
-    "dev": "concurrently \"cargo run --manifest-path ../Cargo.toml\" \"npm run react:dev\" \"npm run electron:dev\"",
-    "build": "npm run react:build && electron-builder && cargo build --release",
-    "frontend:build": "npm run react:build && electron-builder"
+    "backend:dev": "cargo run --manifest-path ../Cargo.toml",
+    "dev": "concurrently -n 'Backend,Frontend' -c 'bgBlue.bold,bgGreen.bold' \"npm run backend:dev\" \"npm run frontend:dev\"",
+    "react:build": "vite build",
+    "electron:build": "electron-builder",
+    "frontend:build": "npm run react:build && electron-builder",
+    "build": "npm run frontend:build && cargo build --release"
   },
   "keywords": [],
   "author": "",
