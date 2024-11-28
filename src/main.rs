@@ -17,4 +17,4 @@ async fn main() {
     let mut router_registry = RouterRegistry::new();
     router_registry.register(Box::new(SearchRouter::new()));
     router_registry.start().await;
-}
+} 
