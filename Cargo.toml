@@ -27,3 +27,4 @@ edition = "2021"
 [[bin]]
 name = "file_wizard"
 path = "src/main.rs"
+
