@@ -44,7 +44,7 @@ For detailed information about the architecture, design, and implementation, ref
 ## Getting Started
 1. Clone the repository:  
    ```bash
-   git clone https://github.com/username/FileWizard.git
+   git clone https://github.com/GabrielPerezCSDev/FileWizard.git
    cd FileWizard
 
 2. Install dependencies for the frontend:
