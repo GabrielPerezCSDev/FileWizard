@@ -116,7 +116,6 @@ impl Search {
     }
 
     pub fn execute_search(&mut self) {
-
         // Step 1: Validate search root
         let search_root = match &self.search_root {
             Some(root) => Arc::clone(root), // Clone the Arc to extend its lifetime
@@ -145,11 +144,13 @@ impl Search {
         }
 
         // Print the current size of the frontier list
+        /*
         println!(
             "[Search] Frontier list for '{}' now has {} entries.",
             root_directory_key,
             frontier_list.len()
         );
+        */
 
         // Step 4: Sort the frontier list
         self.sort_frontier_list(frontier_list);
@@ -159,7 +160,12 @@ impl Search {
             self.current_dir = Some(next_folder);
             if let Some(current_dir_arc) = &self.current_dir {
                 if let Ok(current_folder) = current_dir_arc.lock() {
-                    println!("\n\n\n\n[Search] Current directory updated to {}", current_folder.name);
+                    /*
+                    println!(
+                        "\n\n\n\n[Search] Current directory updated to {}",
+                        current_folder.name
+                    );
+                    */
                 } else {
                     println!("[Search] Failed to lock the current directory.");
                 }
@@ -169,106 +175,76 @@ impl Search {
             self.current_dir = None;
         }
 
-       // Step 6: Discover children and add new to be discovered by frontier nodes
-    if let Some(current_dir) = &self.current_dir {
-        // Pass the `Arc<Mutex<Folder>>` reference directly to `discover_immediate_children`
-        self.discover_immediate_children(current_dir, frontier_list);
-    } else {
-        println!("[Search] No current directory set. Cannot discover children.");
-    }
+        // Step 6: Discover children and add new to be discovered by frontier nodes
+        if let Some(current_dir) = &self.current_dir {
+            // Pass the `Arc<Mutex<Folder>>` reference directly to `discover_immediate_children`
+            self.discover_immediate_children(current_dir, frontier_list);
+        } else {
+            println!("[Search] No current directory set. Cannot discover children.");
+        }
     }
 
     pub fn discover_immediate_children(
         &self,
         folder: &Arc<Mutex<Folder>>,
-        frontier_list: &mut Vec<Arc<Mutex<Folder>>>,
+        frontier_list: &mut Vec<Arc<Mutex<Folder>>>
     ) {
-        println!("[Search] discovering the children");
+        //println!("[Search] discovering the children");
         let path_string = {
             let folder_guard = folder.lock().unwrap(); // Lock the folder to access its contents
             folder_guard.url.clone() // Clone the URL to release the lock
         };
-        
+
         let path = Path::new(&path_string); // Use the cloned URL to create the path
-    
+
         if let Ok(entries) = fs::read_dir(path) {
             for entry in entries {
                 if let Ok(entry) = entry {
                     if entry.path().is_dir() {
-                        println!("[Search] adding a folder");
+                        //println!("[Search] adding a folder");
                         let new_folder = Folder::new(
                             entry.path().as_path(),
                             Some(Arc::clone(folder)), // Pass the actual reference
-                            folder.lock().unwrap().index + 1,
+                            folder.lock().unwrap().index + 1
                         );
-                        println!("[Search] created the new folder");
+                        //println!("[Search] created the new folder");
                         frontier_list.push(Arc::clone(&new_folder));
-                        println!("[Search] added the new fodler to the frontier list");
+                        //println!("[Search] added the new fodler to the frontier list");
                         {
                             let mut folder_guard = folder.lock().unwrap();
                             let path_type = PathType::Folder(Arc::clone(&new_folder));
                             folder_guard.add_child(path_type);
                         }
-                        println!("[Search] After adding the child");
+                        // println!("[Search] After adding the child");
                     } else {
-                        println!("[Search] adding a file");
-                        let new_file = Arc::new(Mutex::new(File::new(
-                            entry.path().as_path(),
-                            Some(Arc::clone(folder)), // Pass the actual reference
-                        )));
+                        //println!("[Search] adding a file");
+                        let new_file = Arc::new(
+                            Mutex::new(
+                                File::new(
+                                    entry.path().as_path(),
+                                    Some(Arc::clone(folder)) // Pass the actual reference
+                                )
+                            )
+                        );
                         let path_type = PathType::File(Arc::clone(&new_file));
-                        
+
                         // Add the new file to the current folder's children
-                    {
-                        let mut folder_guard = folder.lock().unwrap();
-                        folder_guard.add_child(path_type.clone());
-                    }
+                        {
+                            let mut folder_guard = folder.lock().unwrap();
+                            folder_guard.add_child(path_type.clone());
+                        }
                         self.add_path(path_type);
                     }
                 }
             }
         } else {
-            println!("[Error] Unable to read directory: {}", folder.lock().unwrap().url);
+            //  println!("[Error] Unable to read directory: {}", folder.lock().unwrap().url);
         }
-        println!("[Search] finished discovering the children swag");
+        //  println!("[Search] finished discovering the children swag");
     }
-
-    fn propagate_size(&self, folder: &mut Folder, size: u64) {
-        // Step 1: Increment the size of the current folder
-        let size_before = folder.get_raw_size();
-        folder.update_size(size);
-        let size_after = folder.get_raw_size();
-    
-        // Step 2: Check if the current folder is the root and print debug info
-        if folder.parent.is_none() {
-            println!("[Debug] ==================");
-            println!("[Debug] Root folder updated by: {}", folder.get_name());
-            println!(
-                "[Debug] Size propagated from child folder: {} bytes | Size before: {} bytes | Size after: {} bytes",
-                size, size_before, size_after
-            );
-            println!("[Debug] ==================");
-        }
-    
-        // Step 3: Propagate the size to the parent folder
-        if let Some(parent_arc) = &folder.parent {
-            if let Ok(mut parent_folder) = parent_arc.lock() {
-                println!(
-                    "[Debug] Propagating {} bytes from folder '{}' to its parent '{}'",
-                    size,
-                    folder.get_name(),
-                    parent_folder.get_name()
-                );
-                self.propagate_size(&mut parent_folder, size);
-            }
-        }
-    }
-    
-    
-
 
     pub fn sort_frontier_list(&self, frontier_list: &mut Vec<Arc<Mutex<Folder>>>) {
-        println!("[Search] Shuffled frontier list");
+        //println!("[Search] Shuffled frontier list");
         //for now just shufle the entries (will impelment a better sorting algo later with heursitcs)
         // Shuffle the entries in the frontier list
         let mut rng = thread_rng();
@@ -278,9 +254,9 @@ impl Search {
     pub fn assign_next_frontier_to_current(&mut self, frontier_list: &mut Vec<Arc<Mutex<Folder>>>) {
         if let Some(next_folder) = self.pop_frontier_entry(frontier_list) {
             self.current_dir = Some(next_folder); // Assign the popped entry to current_dir
-            println!("[Search] Current directory updated to the next frontier node.");
+            // println!("[Search] Current directory updated to the next frontier node.");
         } else {
-            println!("[Search] Frontier list is empty. No further directories to process.");
+            // println!("[Search] Frontier list is empty. No further directories to process.");
             self.current_dir = None; // Clear current_dir if no entries remain
         }
     }

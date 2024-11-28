@@ -102,7 +102,7 @@ impl Folder {
             }
         }, &PathType::None => todo!()
     };
-        println!("[Folder] floating value to this folder {}: {}",self.name, child_size);
+        //println!("[Folder] floating value to this folder {}: {}",self.name, child_size);
         self.update_size(child_size);
         
 
@@ -110,11 +110,11 @@ impl Folder {
     let mut current_parent = self.parent.clone();
     while let Some(parent_arc) = current_parent {
         if let Ok(mut parent) = parent_arc.lock() {
-            println!("[Folder] Updating parent folder '{}'", parent.name);
+            //println!("[Folder] Updating parent folder '{}'", parent.name);
             parent.update_size(child_size);
             current_parent = parent.parent.clone(); // Move up to the next parent
         } else {
-            println!("[Folder] Failed to lock parent folder.");
+            //println!("[Folder] Failed to lock parent folder.");
             break;
         }
     }
@@ -141,6 +141,7 @@ impl Folder {
         let new_size = current_size + size;
         update_metadata_size(&mut self.metadata, new_size);
         // Debugging output
+        /*
         println!(
         "[Folder] Updated size for folder '{}' after adding {}: raw_size={:?} (formatted={:?})",
         self.name,
@@ -148,6 +149,7 @@ impl Folder {
         self.metadata.get("raw_size"),
         self.metadata.get("size")
         );
+        */
     }
 
     
