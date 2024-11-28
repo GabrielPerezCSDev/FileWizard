@@ -13,3 +13,4 @@ utils = { path = "../utils" }
 [lib]
 name = "file_wizard_db"
 path = "src/lib.rs"
+ 
