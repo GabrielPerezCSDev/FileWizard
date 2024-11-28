@@ -3,6 +3,7 @@ use actix_web::{web, App, HttpResponse, HttpServer, Responder};
 use async_trait::async_trait;
 use std::sync::{Mutex, Arc};
 use serde::Deserialize;
+use actix_cors::Cors;
 //crates and file imports
 use file_wizard_controllers::search::search_controller::SearchController;
 use crate::routers::router::Router;
@@ -110,7 +111,7 @@ impl SearchRouter {
         .await;
 
         match result {
-            Ok(_) => HttpResponse::Ok().body("[SearchRouter] Resumed search operation"),
+            Ok(_) => HttpResponse::Ok().body("[SearchRouter] Paused search operation"),
             Err(e) => {
                 eprintln!("[SearchRouter] Error resuming search: {:?}", e);
                 HttpResponse::InternalServerError().body("Failed to resume search.")
@@ -165,10 +166,14 @@ impl Router for SearchRouter {
          // Clone the Arc to pass into the HTTP server closure
          let controller_data = web::Data::new(Arc::clone(&self.controller));
 
-        // Start the HTTP server
-        HttpServer::new(move || {
+         HttpServer::new(move || {
             App::new()
-                .app_data(controller_data.clone()) // Share the controller with all handlers
+                .wrap(Cors::default()
+                    .allow_any_origin() // Allows requests from any origin
+                    .allow_any_method() // Allows GET, POST, PUT, DELETE, etc.
+                    .allow_any_header() // Allows all headers
+                )
+                .app_data(controller_data.clone())
                 .route("/search", web::get().to(Self::search_endpoint))
                 .route("/search/start", web::get().to(Self::search_start))
                 .route("/search/stop", web::get().to(Self::search_stop))

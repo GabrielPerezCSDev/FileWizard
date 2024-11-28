@@ -12,7 +12,8 @@
     "frontend:dev": "concurrently \"npm run react:dev\" \"npm run electron:dev\"",
     "dev-test": "concurrently -k -n 'Backend,Frontend' -c 'bgBlue.bold,bgGreen.bold' \"npm run backend:dev\" \"npm run react:dev\"",
     "dev": "concurrently \"cargo run --manifest-path ../Cargo.toml\" \"npm run react:dev\" \"npm run electron:dev\"",
-    "build": "npm run react:build && electron-builder && cargo build --release"
+    "build": "npm run react:build && electron-builder && cargo build --release",
+    "frontend:build": "npm run react:build && electron-builder"
   },
   "keywords": [],
   "author": "",
@@ -27,6 +28,7 @@
   },
   "dependencies": {
     "react": "^18.3.1",
-    "react-dom": "^18.3.1"
+    "react-dom": "^18.3.1",
+    "react-router-dom": "^7.0.1"
   }
 }
