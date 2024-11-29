@@ -1,13 +1,43 @@
-body {
+/*index.css */
+
+body, html {
     margin: 0;
-    font-family: Arial, sans-serif;
-    background-color: #3f3e3e;
+    padding: 0;
+    height: 100%;
+    box-sizing: border-box;
+    font-family: 'Poppins', sans-serif; /* Set a modern font */
+    color: #e0e0e0; /* Light gray for text to avoid high contrast strain */
+    background-color: #121212; /* Dark, neutral background for dark mode */
 }
 
-h1 {
-    color: #888a8b;
+.app-container {
+    display: flex; /* Use Flexbox for layout */
+    flex-direction: column; /* Stack children vertically */
+    justify-content: space-between; /* Distribute space evenly */
+    min-height: 100vh; /* Ensure the container spans the viewport height */
+    margin: 0;
+    padding: 0;
+    background-color: #121212; /* Slightly lighter than body background */
+}
+main, footer {
+    width: 75%; /* Center horizontally */
+    margin: 0 auto;
+    padding: 0;
 }
 
-p {
-    color: #888a8b;
+header {
+    width: 87.5%;
+    flex: 0 0 15vh; /* Use viewport height instead of percentage */
+    overflow: hidden; /* Prevent content from overflowing */
+}
+main {
+    flex: 1; /* Main content takes the remaining flexible space */
+    background-color: white; /* Debug color */
+}
+
+footer {
+    flex: 0 0 10vh; /* Footer takes 10% of the container height */
+    display: flex; /* Enable Flexbox for alignment */
+    align-items: flex-end; /* Align content to the bottom of the footer */
+    justify-content: center; /* Optionally center the text horizontally */
 }

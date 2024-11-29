@@ -4,6 +4,7 @@ import Home from './pages/Home';
 import Search from './pages/Search';
 import Header from './components/global/Header';
 import Footer from './components/global/Footer';
+import './index.css';
 
 function App() {
   console.log("[App.jsx] Running the app function");
