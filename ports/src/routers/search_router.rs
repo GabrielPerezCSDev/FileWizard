@@ -149,6 +149,31 @@ impl SearchRouter {
             }
         }
     }
+
+    async fn get_root(
+        controller: web::Data<Arc<Mutex<SearchController>>>
+    ) -> impl Responder {
+        // Clone the Arc to move into the closure
+        let controller_clone = Arc::clone(&controller);
+
+        // Offload the blocking operation to a thread pool
+        let result = web::block(move || {
+            let controller = controller_clone.lock().unwrap();
+            controller.get_search_root()
+        })
+        .await;
+
+        match result {
+            Ok(json_response) => HttpResponse::Ok()
+                .content_type("application/json")
+                .json(json_response),
+            Err(e) => {
+                eprintln!("[SearchRouter] Error retrieving search root: {:?}", e);
+                HttpResponse::InternalServerError()
+                    .body("[SearchRouter] Failed to retrieve search root.")
+            }
+        }
+    }
 }
 
 
@@ -179,7 +204,8 @@ impl Router for SearchRouter {
                 .route("/search/stop", web::get().to(Self::search_stop))
                 .route("/search/resume", web::get().to(Self::search_resume))
                 .route("/search/pause", web::get().to(Self::search_pause))
-                .route("/search/set_directory", web::post().to(Self::set_root_search_directory)) 
+                .route("/search/set_directory", web::post().to(Self::set_root_search_directory))
+                .route("/search/get_root", web::get().to(Self::get_root)) 
         })
         .bind("127.0.0.1:8080")
         .expect("[SearchRouter] Failed to bind to address")
