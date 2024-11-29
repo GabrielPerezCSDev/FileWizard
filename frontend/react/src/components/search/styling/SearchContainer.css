@@ -45,3 +45,57 @@
   .directory-input::placeholder {
      color: rgba(255,255,255,0.5); /* Placeholder color */
   }
+
+  .search-button {
+    padding: 10px 20px;
+    margin: 30px;
+    border: none;
+    border-radius: 5px;
+    font-size: 14px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    text-transform: uppercase;
+}
+.search-button {
+    background-color: #4CAF50;
+    color: white;
+}
+
+.search-button:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+}
+
+.search-button:active {
+    transform: translateY(0);
+    box-shadow: none;
+}
+
+/* Styles for Stop Button */
+.stop-button {
+    position: absolute; /* Position it absolutely within the container */
+    top: 5vh; /* Use viewport height for vertical positioning */
+    right: 5vw; /* Use viewport width for horizontal positioning */
+    padding: 10px 20px;
+    border: none;
+    border-radius: 5px;
+    font-size: 14px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    text-transform: uppercase;
+    background-color: #df1616; /* Red color for stop button */
+    color: white; /* Text color */
+}
+
+.stop-button:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+}
+
+.stop-button:active {
+    transform: translateY(0);
+    box-shadow: none;
+}
+

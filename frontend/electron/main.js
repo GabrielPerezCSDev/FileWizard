@@ -1,13 +1,25 @@
-const { app, BrowserWindow } = require('electron');
+// main.js
+const { app, BrowserWindow, ipcMain, session } = require('electron');
 const path = require('path');
 
+let mainWindow;
+
+try {
+  require('electron-reloader')(module, { ignore: ['node_modules'] });
+} catch (err) {
+  console.log('Hot reloading not enabled:', err);
+}
+
+
 function createWindow() {
-  const mainWindow = new BrowserWindow({
+  mainWindow = new BrowserWindow({
     width: 800,
     height: 600,
     webPreferences: {
       preload: path.join(__dirname, 'preload.js'),
       contextIsolation: true,
+      nodeIntegration: false,
+      enableRemoteModule: false,
     },
   });
 
@@ -17,8 +29,9 @@ function createWindow() {
     mainWindow.loadFile(path.join(__dirname, '../react/dist/index.html')); // Main file
   }
 
-  mainWindow.webContents.on('did-fail-load', () => {
-    mainWindow.loadFile(path.join(__dirname, '../react/dist/index.html')); // Fallback to main file
+  // Prevent Electron from opening files on drop
+  mainWindow.webContents.on('will-navigate', (event) => {
+    event.preventDefault();
   });
 
   mainWindow.webContents.openDevTools();
@@ -30,8 +43,4 @@ app.whenReady().then(() => {
   app.on('activate', () => {
     if (BrowserWindow.getAllWindows().length === 0) createWindow();
   });
-});
-
-app.on('window-all-closed', () => {
-  if (process.platform !== 'darwin') app.quit();
 });

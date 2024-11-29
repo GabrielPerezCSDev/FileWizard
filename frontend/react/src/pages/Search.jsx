@@ -8,15 +8,21 @@ function Search() {
 
   const handleStopSearch = () => {
     setIsSearchStopped(true);
+    console.log('[Search.jsx] isSearchStopped state set to:', true);
   };
 
   const handleStartSearch = () => {
-    setIsSearchStopped(false);
+    console.log('[Search.jsx] handleStartSearch triggered');
+    setIsSearchStopped(false); // Verify this updates `isSearchStopped`
   };
+
+  console.log('[Search.jsx] Rendering SearchContainer with isSearchStopped:', isSearchStopped);
 
   return (
     <div className="search-page">
-      <Taskbar onStop={handleStopSearch} onStart={handleStartSearch} />
+      {/* Pass isSearchStopped to control visibility of the Stop button */}
+      <Taskbar isSearchStopped={isSearchStopped} />
+      
       <SearchContainer isSearchStopped={isSearchStopped} />
     </div>
   );

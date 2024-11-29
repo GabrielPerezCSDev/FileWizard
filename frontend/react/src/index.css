@@ -14,7 +14,7 @@ body, html {
     display: flex; /* Use Flexbox for layout */
     flex-direction: column; /* Stack children vertically */
     justify-content: space-between; /* Distribute space evenly */
-    min-height: 100vh; /* Ensure the container spans the viewport height */
+    min-height: 120vh; /* Ensure the container spans the viewport height */
     margin: 0;
     padding: 0;
     background-color: #111111; /* Slightly lighter than body background */

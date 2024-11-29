@@ -15,6 +15,27 @@
     width: 90%; /* Constrains content width */
     max-width: 1200px; /* Maximum width for very large screens */
   }
+
+/* components/search/styling/SearchContainer.css */
+.search-container {
+    width: 95%; /* Use a percentage width for better responsiveness */
+    max-width: 20000px; /* Maximum width for larger screens */
+    height: 80vh; /* Use viewport height for responsiveness */
+    margin: 20px auto; /* Centered with some margin */
+    padding: 20px; /* Padding inside the container */
+    background-color: rgba(255, 255, 255, 0.1); /* Background color */
+    border-radius: 8px; /* Rounded corners */
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1); /* Subtle shadow */
+}
+
+/* Optional: Adjustments for search placeholder and file upload area */
+.search-placeholder,
+.file-upload-area {
+    height: calc(100% - 50px); /* Adjust height to fill remaining space minus button area */
+    display: flex;
+    justify-content: center;
+    align-items: center;
+}
   
   /* Media query for smaller screens */
   @media (max-width: 768px) {
