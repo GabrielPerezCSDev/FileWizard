@@ -1,0 +1,28 @@
+
+  
+  .taskbar {
+    width: 100%;
+    display: flex;
+    justify-content: flex-end;
+    padding-right: 5%; /* Dynamic right padding */
+    padding-top: 2vh; /* Dynamic top padding */
+    box-sizing: border-box;
+  }
+  
+  .search-content {
+    text-align: center;
+    margin-top: 5vh; /* Dynamic top margin */
+    width: 90%; /* Constrains content width */
+    max-width: 1200px; /* Maximum width for very large screens */
+  }
+  
+  /* Media query for smaller screens */
+  @media (max-width: 768px) {
+    .taskbar {
+      padding-right: 3%; /* Smaller padding for smaller screens */
+    }
+    
+    .search-content {
+      width: 95%; /* Wider content on smaller screens */
+    }
+  }
