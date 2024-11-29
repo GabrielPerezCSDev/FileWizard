@@ -2,7 +2,7 @@
 use std::path::Path;
 use std::collections::HashMap;
 use std::sync::{ Arc, Mutex };
-//use crate::model::path_map::PathMap;
+use serde::{Serialize, Deserialize};
 
 use crate::model::metadata::folder_specific_metadata;
 use crate::model::metadata::update_size as update_metadata_size;

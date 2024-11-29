@@ -1,7 +1,7 @@
 // Required imports
 use std::path::Path;
 use std::collections::HashMap;
-//use crate::model::path_map::PathMap;
+use serde::{Serialize, Deserialize};
 use crate::model::folder::Folder; // Import Folder since File references Folder
 use std::sync::{Arc, Mutex};
 // Import the function that handles file-specific metadata

@@ -298,6 +298,11 @@ impl Search {
         self.root_search_directory.clone() // Clone to avoid ownership issues
     }
 
+    pub fn get_search_root(&self) -> Option<Arc<Mutex<Folder>>> {
+        self.search_root.clone() // Return a clone of the Arc for thread safety
+    }
+
+
     /// Normalize a directory path based on the OS.
     fn normalize_directory_path(path: &str) -> String {
         if cfg!(target_os = "windows") {

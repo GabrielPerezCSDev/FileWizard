@@ -3,7 +3,7 @@ use std::fmt;
 use std::sync::{Arc, Mutex};
 use crate::model::file::File; // Import File from the file module
 use crate::model::folder::Folder; // Import Folder from the folder module
-
+use serde::{Serialize, Deserialize};
 /// PathType enum to differentiate between Files, Folders, and None
 #[derive(Clone, Debug)]
 pub enum PathType {
