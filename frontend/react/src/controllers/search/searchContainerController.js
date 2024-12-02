@@ -42,3 +42,30 @@ export const stopSearch = () => {
       })
       .catch((error) => console.error('Error stopping search:', error));
 };
+
+export const fetchD3Data = async () => {
+  try {
+    console.log('[fetchD3Data] Attempting to fetch data...');
+    const response = await fetch('http://localhost:8080/search/get_root', { 
+      method: 'GET',
+      headers: {
+        'Accept': 'application/json'
+      }
+    });
+
+    console.log('[fetchD3Data] Response status:', response.status);
+    
+    if (!response.ok) {
+      const errorText = await response.text();
+      console.error('[fetchD3Data] Error response:', errorText);
+      throw new Error(`Failed to fetch D3 data. Status: ${response.status}`);
+    }
+
+    const data = await response.json();
+    console.log('[fetchD3Data] Data received:', data);
+    return data;
+  } catch (error) {
+    console.error('[fetchD3Data] Detailed error:', error);
+    return null;
+  }
+};

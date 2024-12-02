@@ -1,11 +1,14 @@
 //SearchContainer.jsx
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import './styling/SearchContainer.css';
 import D3Tree from './D3Tree';
+import { fetchD3Data } from '../../controllers/search/searchContainerController';
 
 const SearchContainer = ({ isSearchStopped, onStartSearch }) => {
   const [folderPath, setFolderPath] = useState('');
-  const [treeKey, setTreeKey] = useState(0); // State to force re-render
+  const [treeKey, setTreeKey] = useState(0);
+  const [treeData, setTreeData] = useState(null);
+  const pollingIntervalRef = useRef(null);
 
   console.log('[SearchContainer] Rendering with isSearchStopped:', isSearchStopped);
 
@@ -33,11 +36,53 @@ const SearchContainer = ({ isSearchStopped, onStartSearch }) => {
   };
 
   useEffect(() => {
-    console.log('[SearchContainer] useEffect triggered with isSearchStopped:', isSearchStopped);
+    // Clear any existing interval when the component mounts or isSearchStopped changes
+    if (pollingIntervalRef.current) {
+      clearInterval(pollingIntervalRef.current);
+      pollingIntervalRef.current = null;
+    }
+
+    if (!isSearchStopped) {
+      console.log('[Polling] Starting polling');
+      
+      // Create a function to fetch data
+      const fetchData = async () => {
+        try {
+          console.log('[Polling] Fetching data from /search/get_root');
+          const rootData = await fetchD3Data();
+          
+          if (rootData) {
+            console.log('[Polling] Updating tree data');
+            setTreeData(rootData);
+          }
+        } catch (error) {
+          console.error('Error during polling fetch:', error);
+        }
+      };
+
+      // Initial fetch
+      fetchData();
+
+      // Start a new polling interval
+      pollingIntervalRef.current = setInterval(fetchData, 100);
+    }
+
+    // Cleanup function to clear interval when component unmounts or search stops
+    return () => {
+      if (pollingIntervalRef.current) {
+        clearInterval(pollingIntervalRef.current);
+        pollingIntervalRef.current = null;
+        console.log('[Polling] Stopping polling');
+      }
+    };
+  }, [isSearchStopped]); // Re-run effect when isSearchStopped changes
+
+  useEffect(() => {
     if (isSearchStopped) {
       setFolderPath('');
-      setTreeKey(prevKey => prevKey + 1); // Increment key to force re-render of D3Tree
-      console.log('[SearchContainer] Folder path reset');
+      setTreeData(null);
+      setTreeKey(prevKey => prevKey + 1);
+      console.log('[SearchContainer] Folder path and tree data reset');
     }
   }, [isSearchStopped]);
 
@@ -51,7 +96,7 @@ const SearchContainer = ({ isSearchStopped, onStartSearch }) => {
     if (folderPath) {
       console.log('[SearchContainer] Starting search with directory:', folderPath);
       onStartSearch(folderPath);
-      setTreeKey(prevKey => prevKey + 1); // Increment key to force re-render of D3Tree
+      setTreeKey(prevKey => prevKey + 1);
     } else {
       console.warn('[SearchContainer] No directory path provided.');
       alert('Please enter or drop a directory path before starting.');
@@ -77,7 +122,7 @@ const SearchContainer = ({ isSearchStopped, onStartSearch }) => {
         </div>
       ) : (
         <div className="search-placeholder">
-          <D3Tree key={treeKey} data={dummyData} /> {/* Use treeKey to force re-render */}
+          <D3Tree key={treeKey} data={treeData} />
         </div>
       )}
     </div>
