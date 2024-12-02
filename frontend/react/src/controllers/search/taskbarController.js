@@ -25,3 +25,17 @@ export const resumeSearch = () => {
         })
         .catch((error) => console.error('Error resuming search:', error));
 };
+
+export const stopSearch = async () => {
+    console.log('Stop clicked');
+    try {
+        const response = await fetch('http://localhost:8080/search/stop', { method: 'GET' });
+        if (!response.ok) throw new Error('Failed to stop search');
+        const data = await response.text();
+        console.log('Search stopped:', data);
+        return true; // Indicate success
+    } catch (error) {
+        console.error('Error stopping search:', error);
+        return false; // Indicate failure
+    }
+};

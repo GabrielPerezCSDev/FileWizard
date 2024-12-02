@@ -99,3 +99,15 @@
     box-shadow: none;
 }
 
+.d3-tree {
+    width: 100%;
+    height: 500px;
+    position: relative;
+}
+
+#d3-tree-container {
+    width: 100%;
+    height: 100%;
+    overflow: hidden;
+}
+

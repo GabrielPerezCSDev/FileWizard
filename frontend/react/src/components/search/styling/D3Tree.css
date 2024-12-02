@@ -1,0 +1,15 @@
+.link {
+    fill: none;
+    stroke: #ccc;
+    stroke-width: 2px;
+  }
+  
+  .node circle {
+    stroke: #333;
+    stroke-width: 1.5px;
+  }
+  
+  .node text {
+    font-family: Arial, sans-serif;
+    fill: #333;
+  }
