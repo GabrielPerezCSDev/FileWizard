@@ -1,58 +1,11 @@
-//d3Tree.js
 import * as d3 from 'd3';
 
-/**
- * Transform backend JSON to D3-compatible hierarchical format
- * @param {Object} backendData - The JSON data from the backend
- * @returns {Object} D3-compatible hierarchical object
- */
-function transformBackendDataForD3(backendData) {
-    // If the data doesn't match expected structure, return a default object
-    if (!backendData || !backendData.name) {
-        return { name: 'Root', children: [] };
-    }
-
-    // Helper function to recursively transform data
-    const transformNode = (node) => {
-        // Base transformation object
-        const transformedNode = {
-            name: node.name,
-            // Use raw_size for sizing, default to 1 if not present
-            size: parseInt(node.metadata?.raw_size || 1),
-            // Preserve original metadata for potential future use
-            originalMetadata: node.metadata
-        };
-
-        // Add children if they exist
-        if (node.children && node.children.length > 0) {
-            transformedNode.children = node.children.map(transformNode);
-        }
-
-        return transformedNode;
-    };
-
-    // Transform the root data
-    return transformNode(backendData);
-}
-
-/**
- * Render a D3 treemap graph in the specified container.
- * @param {string} containerId - The ID of the container DOM element.
- * @param {Object} backendData - The hierarchical data from backend.
- */
 export function renderD3Tree(containerId, backendData) {
-    console.log('[renderD3Tree] Rendering treemap for container:', containerId);
-    console.log('[renderD3Tree] Backend data received:', backendData);
-
-    // Transform backend data to D3-compatible format
-    const data = transformBackendDataForD3(backendData);
-    console.log('[renderD3Tree] Transformed D3 data:', data);
-
     const container = d3.select(`#${containerId}`);
-    const width = container.node().clientWidth;
-    const height = container.node().clientHeight;
-
-    console.log('[renderD3Tree] Container dimensions:', { width, height });
+    const containerDiv = document.getElementById(containerId);
+    const boundingRect = containerDiv.getBoundingClientRect();
+    const width = boundingRect.width;
+    const height = boundingRect.height;
 
     // Clear existing SVG
     container.selectAll('svg').remove();
@@ -61,8 +14,14 @@ export function renderD3Tree(containerId, backendData) {
         .append('svg')
         .attr('width', width)
         .attr('height', height)
-        .style('background-color', '#f0f0f0');
+        .style('display', 'block');
 
+    // Add a main group for the treemap
+    const mainGroup = svg.append('g');
+
+    // Transform data
+    const data = transformBackendDataForD3(backendData);
+    
     // Create hierarchy and sum sizes
     const root = d3.hierarchy(data)
         .sum(d => d.size)
@@ -71,71 +30,135 @@ export function renderD3Tree(containerId, backendData) {
     // Create treemap layout
     const treemapLayout = d3.treemap()
         .size([width, height])
-        .padding(1)
-        .round(true);
+        
 
-    // Apply treemap layout
     treemapLayout(root);
 
-    // Color scale for differentiation
-    const color = d3.scaleOrdinal(d3.schemeCategory10);
+    // Helper function to check if a name represents a folder
+    const isFolder = (name) => !name.includes('.');
 
-    // Create nodes
-    const nodes = svg
-        .selectAll('g')
-        .data(root.leaves())
-        .join('g')
-        .attr('transform', d => `translate(${d.x0},${d.y0})`);
+    // Color scale for differentiation between files and folders
+    const color = d3.scaleOrdinal()
+        .domain(['file', 'folder'])
+        .range(['#64748b', '#0ea5e9']) // Orange for files, Steel Blue for folders
+
+     // Create nodes with interactions
+     const nodes = mainGroup
+     .selectAll('g')
+     .data(root.children || [])
+     .join('g')
+     .attr('transform', d => `translate(${d.x0},${d.y0})`)
+     .style('cursor', d => isFolder(d.data.name) ? 'pointer' : 'default') // Change cursor for folders
+     .on('mouseover', (event, d) => {
+         // Log metadata on hover
+         console.log('Hovering:', {
+             name: d.data.name,
+             size: formatSize(d.value),
+             type: isFolder(d.data.name) ? 'folder' : 'file',
+             metadata: d.data.originalMetadata
+         });
+
+         // Change fill color on hover
+         d3.select(event.currentTarget)
+             .select('rect')
+             .transition()
+             .duration(200)
+             .attr('fill', isFolder(d.data.name) ? '#0bc8eb' : '#9d6eff');
+     })
+     .on('mouseout', (event, d) => {
+         // Reset fill color
+         d3.select(event.currentTarget)
+             .select('rect')
+             .transition()
+             .duration(200)
+             .attr('fill', isFolder(d.data.name) ? '#06b6d4' : '#8b5cf6');
+     })
+     .on('click', (event, d) => {
+        // Only handle clicks for folders
+        if (isFolder(d.data.name)) {
+            console.log('Would navigate to:', `${window.location.pathname}/${d.data.name}`);
+            
+            // Here you would typically:
+            // 1. Update the URL
+            // 2. Trigger a new data fetch
+            // 3. Re-render with new data
+            console.log('Folder clicked:', {
+                name: d.data.name,
+                path: `${window.location.pathname}/${d.data.name}`,
+                action: 'navigate'
+            });
+        }
+    });
 
     // Rectangles for each node
     nodes
         .append('rect')
-        .attr('width', d => d.x1 - d.x0)
-        .attr('height', d => d.y1 - d.y0)
-        .attr('fill', (d, i) => color(i))
+        .attr('width', d => Math.max(d.x1 - d.x0, 0))
+        .attr('height', d => Math.max(d.y1 - d.y0, 0))
+        .attr('fill', d => color(isFolder(d.data.name) ? 'folder' : 'file'))
         .attr('stroke', '#fff')
         .attr('stroke-width', 1);
 
-    // Labels for each node
-    nodes
+    // Function to format size
+    const formatSize = (size) => {
+        if (size < 1024) return `${size} B`;
+        if (size < 1024 * 1024) return `${(size / 1024).toFixed(1)} KB`;
+        if (size < 1024 * 1024 * 1024) return `${(size / (1024 * 1024)).toFixed(1)} MB`;
+        return `${(size / (1024 * 1024 * 1024)).toFixed(1)} GB`;
+    };
+
+    // Add labels
+    const labels = nodes
+        .append('g')
+        .attr('class', 'node-label')
+        .attr('pointer-events', 'none');
+
+    // File/folder name
+    labels
         .append('text')
-        .attr('x', 5)
-        .attr('y', 20)
+        .attr('x', 4)
+        .attr('y', 15)
         .text(d => d.data.name)
-        .attr('font-size', '10px')
+        .attr('font-size', '12px')
         .attr('fill', 'black')
-        .call(wrap, 100); // Optional text wrapping function
 
-    // Optional text wrapping function
-    function wrap(text, width) {
-        text.each(function() {
-            const text = d3.select(this);
-            const words = text.text().split(/\s+/).reverse();
-            let word;
-            let line = [];
-            let lineNumber = 0;
-            const lineHeight = 1.1; // ems
-            const y = text.attr('y');
-            const dy = parseFloat(text.attr('dy') || 0);
-            let tspan = text.text(null).append('tspan')
-                .attr('x', 5)
-                .attr('y', y)
-                .attr('dy', dy + 'em');
+    // Size text
+    labels
+        .append('text')
+        .attr('x', 4)
+        .attr('y', 30)
+        .text(d => formatSize(d.value))
+        .attr('font-size', '10px')
+        .attr('fill', '#666')
 
-            while (word = words.pop()) {
-                line.push(word);
-                tspan.text(line.join(' '));
-                if (tspan.node().getComputedTextLength() > width) {
-                    line.pop();
-                    tspan.text(line.join(' '));
-                    line = [word];
-                    tspan = text.append('tspan')
-                        .attr('x', 5)
-                        .attr('y', y)
-                        .attr('dy', ++lineNumber * lineHeight + dy + 'em')
-                        .text(word);
-                }
-            }
-        });
+    // Hide labels that don't fit
+    labels.each(function() {
+        const label = d3.select(this);
+        const parentNode = d3.select(this.parentNode);
+        const rect = parentNode.select('rect');
+        const rectWidth = parseFloat(rect.attr('width'));
+        const rectHeight = parseFloat(rect.attr('height'));
+
+        if (rectWidth < 60 || rectHeight < 40) {
+            label.style('display', 'none');
+        }
+    });
+}
+
+function transformBackendDataForD3(backendData) {
+    if (!backendData || !backendData.name) {
+        return { name: 'Root', children: [] };
     }
+
+    // Take only immediate children with their sizes
+    const children = backendData.children?.map(child => ({
+        name: child.name,
+        size: parseInt(child.metadata?.raw_size || 1),
+    })) || [];
+
+    // Return simplified data structure
+    return {
+        name: backendData.name,
+        children: children
+    };
 }

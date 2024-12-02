@@ -2,25 +2,28 @@
 import React, { useEffect } from 'react';
 import { renderD3Tree } from '../../utils/d3Tree';
 
-const D3Tree = ({ data }) => {
-    useEffect(() => {
-        console.log('[D3Tree Component] Rendering tree with data:', data);
-      
-        const containerId = 'd3-tree-container';
-        console.log(`[D3Tree Component] Calling renderD3Tree with containerId: ${containerId}`);
+const D3Tree = ({ containerId = 'd3-tree-container', data }) => {
+  useEffect(() => {
+    if (data) {
+      const container = document.getElementById(containerId);
+      if (container) {
         renderD3Tree(containerId, data);
-      
-        return () => {
-            console.log('[D3Tree Component] Cleaning up SVG');
-            const container = document.getElementById(containerId);
-            if (container) {
-              const svg = container.querySelector('svg');
-              if (svg) svg.remove(); // Remove only the SVG, not the entire container content
-            }
-          };
-      }, [data]);
+      }
+    }
+  }, [data, containerId]);
 
-  return <div id="d3-tree-container" style={{ width: '100%', height: '500px' }} />;
+  return (
+    <div 
+      id={containerId} 
+      style={{ 
+        width: '100%', 
+        height: '100%',
+        position: 'relative',
+        overflow: 'hidden', // Prevent any overflow
+        backgroundColor: '#a62424'
+      }}
+    />
+  );
 };
 
 export default D3Tree;
