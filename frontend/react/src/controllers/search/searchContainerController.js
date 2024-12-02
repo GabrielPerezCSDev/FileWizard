@@ -45,7 +45,7 @@ export const stopSearch = () => {
 
 export const fetchD3Data = async () => {
   try {
-    console.log('[fetchD3Data] Attempting to fetch data...');
+    //console.log('[fetchD3Data] Attempting to fetch data...');
     const response = await fetch('http://localhost:8080/search/get_root', { 
       method: 'GET',
       headers: {
@@ -53,7 +53,7 @@ export const fetchD3Data = async () => {
       }
     });
 
-    console.log('[fetchD3Data] Response status:', response.status);
+    //console.log('[fetchD3Data] Response status:', response.status);
     
     if (!response.ok) {
       const errorText = await response.text();
@@ -62,7 +62,7 @@ export const fetchD3Data = async () => {
     }
 
     const data = await response.json();
-    console.log('[fetchD3Data] Data received:', data);
+    //console.log('[fetchD3Data] Data received:', data);
     return data;
   } catch (error) {
     console.error('[fetchD3Data] Detailed error:', error);

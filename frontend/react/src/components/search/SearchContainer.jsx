@@ -10,30 +10,7 @@ const SearchContainer = ({ isSearchStopped, onStartSearch }) => {
   const [treeData, setTreeData] = useState(null);
   const pollingIntervalRef = useRef(null);
 
-  console.log('[SearchContainer] Rendering with isSearchStopped:', isSearchStopped);
-
-  // Dummy data for D3 testing
-  const dummyData = {
-    name: 'Root',
-    children: [
-      {
-        name: 'Folder A',
-        metadata: { raw_size: 100 },
-        children: [
-          { name: 'File A1', metadata: { raw_size: 50 } },
-          { name: 'File A2', metadata: { raw_size: 50 } },
-        ],
-      },
-      {
-        name: 'Folder B',
-        metadata: { raw_size: 200 },
-        children: [
-          { name: 'File B1', metadata: { raw_size: 150 } },
-          { name: 'File B2', metadata: { raw_size: 50 } },
-        ],
-      },
-    ],
-  };
+  
 
   useEffect(() => {
     // Clear any existing interval when the component mounts or isSearchStopped changes
@@ -43,16 +20,16 @@ const SearchContainer = ({ isSearchStopped, onStartSearch }) => {
     }
 
     if (!isSearchStopped) {
-      console.log('[Polling] Starting polling');
+      //console.log('[Polling] Starting polling');
       
       // Create a function to fetch data
       const fetchData = async () => {
         try {
-          console.log('[Polling] Fetching data from /search/get_root');
+          //console.log('[Polling] Fetching data from /search/get_root');
           const rootData = await fetchD3Data();
           
           if (rootData) {
-            console.log('[Polling] Updating tree data');
+            //console.log('[Polling] Updating tree data');
             setTreeData(rootData);
           }
         } catch (error) {
