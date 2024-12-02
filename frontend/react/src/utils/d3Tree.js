@@ -1,6 +1,7 @@
 import * as d3 from 'd3';
-
+import { switchRoot} from '../controllers/search/d3Controller';
 export function renderD3Tree(containerId, backendData) {
+    let isNavigating = false;
     // Different size thresholds
     const SIZE_THRESHOLDS = {
         tiny: { width: 40, height: 30 },      // Show just name with smaller font
@@ -220,13 +221,21 @@ export function renderD3Tree(containerId, backendData) {
             const textContainer = d3.select(this).select('.text-container');
             createDefaultText(textContainer, d);
         })
-        .on('click', (event, d) => {
-            if (isFolder(d.data.name)) {
-                console.log('Folder clicked:', {
-                    name: d.data.name,
-                    path: d.data.url || '',
-                    action: 'navigate'
-                });
+        .on('click', async (event, d) => {
+            if (isFolder(d.data.name) && !isNavigating) {
+                try {
+                    isNavigating = true; // Set flag before starting
+                    console.log('Folder being sent to change too:', {
+                        name: d.data.name,
+                        path: d.data.url || '',
+                        action: 'navigate'
+                    });
+                    await switchRoot(d.data.url);
+                } catch (error) {
+                    console.error('Navigation error:', error);
+                } finally {
+                    isNavigating = false; // Reset flag whether successful or not
+                }
             }
         });
 }
