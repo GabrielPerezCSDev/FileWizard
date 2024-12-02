@@ -14,19 +14,19 @@ const Taskbar = ({ isSearchStopped, onStart, onStop }) => {
     };
   
     return (
-      <div className="taskbar">
-          <>
+        <div className="taskbar">
             <button className="taskbar-button pause-btn" onClick={pauseSearch}>
-              Pause
+                Pause
             </button>
             <button className="taskbar-button resume-btn" onClick={resumeSearch}>
-              Pause
+                Resume
             </button>
-            <button className="taskbar-button stop-btn" onClick={handleStopClick}>
-              Stop
-            </button>
-          </>
-      </div>
+            {!isSearchStopped && (
+                <button className="taskbar-button stop-btn" onClick={handleStopClick}>
+                    Stop
+                </button>
+            )}
+        </div>
     );
   };
   

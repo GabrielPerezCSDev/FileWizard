@@ -1,3 +1,4 @@
+//d3Tree.js
 import * as d3 from 'd3';
 
 /**
@@ -10,8 +11,8 @@ export function renderD3Tree(containerId, data) {
     console.log('[renderD3Tree] Data received:', data);
 
     const container = d3.select(`#${containerId}`);
-    const width = container.node().getBoundingClientRect().width;
-    const height = container.node().getBoundingClientRect().height;
+    const width = container.node().clientWidth; // Use clientWidth
+    const height = container.node().clientHeight; // Use clientHeight
 
     console.log('[renderD3Tree] Container dimensions:', { width, height });
 

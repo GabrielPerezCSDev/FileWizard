@@ -1,10 +1,11 @@
+//SearchContainer.jsx
 import React, { useState, useEffect } from 'react';
 import './styling/SearchContainer.css';
 import D3Tree from './D3Tree';
 
 const SearchContainer = ({ isSearchStopped, onStartSearch }) => {
-  console.log('[SearchContainer] Component function called');
   const [folderPath, setFolderPath] = useState('');
+  const [treeKey, setTreeKey] = useState(0); // State to force re-render
 
   console.log('[SearchContainer] Rendering with isSearchStopped:', isSearchStopped);
 
@@ -35,6 +36,7 @@ const SearchContainer = ({ isSearchStopped, onStartSearch }) => {
     console.log('[SearchContainer] useEffect triggered with isSearchStopped:', isSearchStopped);
     if (isSearchStopped) {
       setFolderPath('');
+      setTreeKey(prevKey => prevKey + 1); // Increment key to force re-render of D3Tree
       console.log('[SearchContainer] Folder path reset');
     }
   }, [isSearchStopped]);
@@ -49,20 +51,17 @@ const SearchContainer = ({ isSearchStopped, onStartSearch }) => {
     if (folderPath) {
       console.log('[SearchContainer] Starting search with directory:', folderPath);
       onStartSearch(folderPath);
+      setTreeKey(prevKey => prevKey + 1); // Increment key to force re-render of D3Tree
     } else {
       console.warn('[SearchContainer] No directory path provided.');
       alert('Please enter or drop a directory path before starting.');
     }
   };
   
-  console.log('[SearchContainer] Before return statement');
-  
   return (
     <div className="search-container">
-      {console.log('[SearchContainer] Inside return, isSearchStopped:', isSearchStopped)}
       {isSearchStopped ? (
         <div className="file-upload-area drop-zone">
-          {console.log('[SearchContainer] Rendering upload area')}
           <div className="file-upload-content">
             <p>Drag and drop a folder here</p>
             <input
@@ -78,10 +77,7 @@ const SearchContainer = ({ isSearchStopped, onStartSearch }) => {
         </div>
       ) : (
         <div className="search-placeholder">
-          {console.log('[SearchContainer] Rendering search placeholder')}
-          <div id="d3-tree-container" className="d3-tree">
-            <D3Tree data={dummyData} />
-          </div>
+          <D3Tree key={treeKey} data={dummyData} /> {/* Use treeKey to force re-render */}
         </div>
       )}
     </div>
