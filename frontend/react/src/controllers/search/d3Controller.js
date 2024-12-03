@@ -1,4 +1,4 @@
-
+//controllers/d3Controler.js
 export const switchRoot = async (root) => {
     console.log("Switching root");
     await stopSearch();
