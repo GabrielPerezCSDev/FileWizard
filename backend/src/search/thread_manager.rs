@@ -24,14 +24,14 @@ pub fn spawn_thread(search: Arc<Mutex<Search>>, state: Arc<Mutex<State>>) -> thr
             match current_state {
                 State::RunningNonInit => {
                     println!("\n\n[Search Thread] Initializing the search");
-                    search.lock().unwrap().initialize_search();
+                    //search.lock().unwrap().initialize_search();
                     // Transition to RunningInit
                     let mut state_guard = state.lock().unwrap();
                     *state_guard = State::RunningInit;
                     paused_logged = false;
                     println!("\n\n[Search Thread] State changed to RunningInit");
                 }State::RunningInit => {
-                    search.lock().unwrap().execute_search();
+                    //search.lock().unwrap().execute_search();
                     thread::sleep(Duration::from_secs(1));
                     paused_logged = false;
                 }
