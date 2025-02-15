@@ -12,6 +12,10 @@ chrono = "0.4"
 utils = { path = "../utils" }
 rand = "0.8"
 
+[dev-dependencies]
+tempfile = "3.8"
+
+
 [lib]
 name = "file_wizard_backend"
 path = "src/lib.rs"
