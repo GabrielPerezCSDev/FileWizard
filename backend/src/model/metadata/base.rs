@@ -1,4 +1,5 @@
 use std::fs;
+use std::path::PathBuf;
 use std::time::SystemTime;
 use std::path::Path;
 
@@ -31,8 +32,10 @@ pub trait BaseMetadata {
     fn is_directory(&self) -> bool;
     fn is_file(&self) -> bool;
     fn name(&self) -> String;
+    fn path(&self) -> PathBuf;
     fn extension(&self) -> String;
     fn exists(&self) -> bool;
+    fn formatted_metadata(&self) -> String;
 }
 
 // Common metadata struct that implements BaseMetadata
@@ -44,6 +47,7 @@ pub struct CommonMetadata {
     modified: SystemTime,
     is_dir: bool,
     name: String,
+    path: PathBuf,
     extension: String,
     exists: bool,
 }
@@ -51,25 +55,23 @@ pub struct CommonMetadata {
 impl CommonMetadata {
     /// Creates a new CommonMetadata instance from a path
     pub fn new(path: &Path) -> Result<Self, MetadataError> {
-        // First check if path exists
+        // First check if path exists.
         if !path.exists() {
             return Err(MetadataError::InvalidPath(format!("Path does not exist: {:?}", path)));
         }
 
         let metadata = fs::metadata(path)?;
 
-        // Get extension if it exists, else "None" for files, "" for directories
+        // Get extension if it exists, else "None" for files, "" for directories.
         let extension = if metadata.is_dir() {
-            String::new() // Empty string for directories
+            String::new() // Empty string for directories.
         } else {
-            // Handle file extension cases
             let file_name = path
                 .file_name()
                 .and_then(|n| n.to_str())
                 .unwrap_or("");
 
             if file_name.ends_with(".") {
-                // File ends with a dot - consider as no extension
                 "None".to_string()
             } else {
                 path.extension()
@@ -92,6 +94,7 @@ impl CommonMetadata {
                 .to_string(),
             extension,
             exists: true,
+            path: path.to_path_buf(),
         })
     }
 
@@ -99,12 +102,13 @@ impl CommonMetadata {
         Self {
             size: 0,
             children: if path.is_dir() { Some(0) } else { None },
-            created: std::time::SystemTime::now(),
-            modified: std::time::SystemTime::now(),
+            created: SystemTime::now(),
+            modified: SystemTime::now(),
             is_dir: path.is_dir(),
             name: name.to_string(),
             extension: String::new(),
             exists: false,
+            path: path.to_path_buf(),
         }
     }
 
@@ -140,6 +144,10 @@ impl CommonMetadata {
         self.extension = new_extension;
     }
 
+    pub fn set_path(&mut self, new_path: PathBuf) {
+        self.path = new_path;
+    }
+
 }
 
 impl BaseMetadata for CommonMetadata {
@@ -171,11 +179,39 @@ impl BaseMetadata for CommonMetadata {
         self.name.clone()
     }
 
+    fn path(&self) -> PathBuf {
+        self.path.clone()
+    }
+
     fn exists(&self) -> bool {
         self.exists
     }
 
     fn extension(&self) -> String {
         self.extension.clone()
+    }
+
+    fn formatted_metadata(&self) -> String {
+        format!(
+            "
+            CommonMetadata:
+            Name: {}
+            Path: {}
+            Extension: {}
+            Size: {} bytes
+            Children: {:?}
+            Created: {:?}
+            Modified: {:?}
+            Exists: {}
+            ",
+            self.name,
+            self.path.display(),
+            self.extension,
+            self.size,
+            self.children,
+            self.created,
+            self.modified,
+            self.exists
+        )
     }
 }

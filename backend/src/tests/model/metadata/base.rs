@@ -33,6 +33,7 @@ fn test_common_metadata_file() {
     assert!(metadata.exists());
     assert!(metadata.created() >= UNIX_EPOCH);
     assert!(metadata.modified() >= UNIX_EPOCH);
+    assert_eq!(metadata.path().as_path(), file_path.as_path());
 }
 
 #[test]
@@ -52,6 +53,7 @@ fn test_common_metadata_directory() {
     assert!(metadata.exists());
     assert!(metadata.created() >= UNIX_EPOCH);
     assert!(metadata.modified() >= UNIX_EPOCH);
+    assert_eq!(metadata.path().as_path(), dir_path.to_path_buf().as_path());
 }
 
 #[test]
@@ -229,7 +231,9 @@ fn test_file_setters() {
     // Create initial metadata from the file.
     let mut metadata = CommonMetadata::new(&file_path).expect("Failed to create metadata");
     println!("{} Original metadata: {:?}", test_id, metadata);
-
+    let new_path = temp_dir.path().join("new_path.txt");
+    metadata.set_path(new_path.clone());
+    assert_eq!(metadata.path().as_path(), new_path.as_path(), "Path should be updated");
     // Update the name and extension.
     let new_name = "updated.txt".to_string();
     let new_extension = "md".to_string();

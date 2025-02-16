@@ -1,4 +1,3 @@
-use crate::search::utils::Search;
 use std::thread;
 use std::sync::{Arc, Mutex};
 use std::time::Duration;
@@ -11,7 +10,7 @@ pub enum State {
     Stopped,
 }
 
-pub fn spawn_thread(search: Arc<Mutex<Search>>, state: Arc<Mutex<State>>) -> thread::JoinHandle<()> {
+pub fn spawn_thread(state: Arc<Mutex<State>>) -> thread::JoinHandle<()> {
     // Create a new thread
     thread::spawn(move || {
         // Thread logic here

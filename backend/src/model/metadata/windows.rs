@@ -2,6 +2,7 @@ use std::time::SystemTime;
 use std::path::Path;
 use std::fs;
 use std::os::windows::fs::MetadataExt; // Windows-specific metadata traits
+use std::path::PathBuf;
 
 use super::base::{ BaseMetadata, CommonMetadata, MetadataError };
 
@@ -32,6 +33,17 @@ impl WindowsMetadata {
             archive: (attributes & 0x20) != 0, // FILE_ATTRIBUTE_ARCHIVE
             raw_attributes: attributes,
         })
+    }
+
+    pub fn default_instance(path: &Path, name: &str) -> Self {
+        Self {
+            common: CommonMetadata::default_instance(path, name),
+            read_only: false,
+            hidden: false,
+            system: false,
+            archive: false,
+            raw_attributes: 0,
+        }
     }
 
     // Windows-specific getters
@@ -125,47 +137,10 @@ impl WindowsMetadata {
         self.common.set_exists(exists);
     }
 
-
-    pub fn formatted_metadata(&self) -> String {
-
-        let children_str = if self.is_directory() {
-            self.common.children().unwrap_or(0).to_string()
-        } else {
-            "N/A".to_string()
-        };
-
-        format!(
-            "File Metadata:
-            Name: {}
-            Extension: {}
-            Size: {} bytes
-            Children: {}
-            Created: {:?}
-            Modified: {:?}
-            Directory: {}
-            File: {}
-            Exists: {}
-            Read-Only: {}
-            Hidden: {}
-            System: {}
-            Archive: {}
-            Raw Attributes: {:#010X}",
-            self.name(),
-            self.extension(),
-            self.size(),
-            children_str,
-            self.created(),
-            self.modified(),
-            self.is_directory(),
-            self.is_file(),
-            self.exists(),
-            self.is_read_only(),
-            self.is_hidden(),
-            self.is_system(),
-            self.is_archive(),
-            self.raw_attributes()
-        )
+    pub fn set_path(&mut self, new_path: PathBuf){
+        self.common.set_path(new_path);
     }
+
 }
 
 // Implement BaseMetadata by delegating to common
@@ -198,11 +173,58 @@ impl BaseMetadata for WindowsMetadata {
         self.common.name()
     }
 
+    fn path(&self) -> PathBuf {
+        self.common.path()
+    }
+
     fn extension(&self) -> String {
         self.common.extension()
     }
 
     fn exists(&self) -> bool {
         self.common.exists()
+    }
+
+    fn formatted_metadata(&self) -> String {
+
+        let children_str = if self.is_directory() {
+            self.common.children().unwrap_or(0).to_string()
+        } else {
+            "N/A".to_string()
+        };
+
+        format!(
+            "File Metadata:
+            Name: {}
+            Extension: {}
+            Path: {}
+            Size: {} bytes
+            Children: {}
+            Created: {:?}
+            Modified: {:?}
+            Directory: {}
+            File: {}
+            Exists: {}
+            Read-Only: {}
+            Hidden: {}
+            System: {}
+            Archive: {}
+            Raw Attributes: {:#010X}",
+            self.name(),
+            self.extension(),
+            self.path().display(),
+            self.size(),
+            children_str,
+            self.created(),
+            self.modified(),
+            self.is_directory(),
+            self.is_file(),
+            self.exists(),
+            self.is_read_only(),
+            self.is_hidden(),
+            self.is_system(),
+            self.is_archive(),
+            self.raw_attributes()
+        )
     }
 }

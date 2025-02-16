@@ -63,6 +63,11 @@ mod windows_tests {
         assert!(!metadata.is_directory(), "Should not be a directory");
         assert!(metadata.is_file(), "Should be a file");
         assert!(metadata.exists(), "File should exist");
+        assert_eq!(
+            metadata.path().as_path(),
+            file_path.as_path(),
+            "Metadata path should match file path"
+        );
 
         // Assertions for Windows-specific metadata.
         // Typically, a newly created file is not read-only, hidden, or a system file.
@@ -175,6 +180,10 @@ mod windows_tests {
         assert!(!metadata.exists(), "Exists flag should be updated to false");
 
         println!("{} Updated file metadata: {}", test_id, metadata.formatted_metadata());
+
+        let new_path = temp_dir.path().join("new_path.txt");
+        metadata.set_path(new_path.clone());
+        assert_eq!(metadata.path().as_path(), new_path.as_path(), "Path should be updated");
     }
 
     #[test]

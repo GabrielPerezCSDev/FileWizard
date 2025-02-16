@@ -4,7 +4,6 @@ use std::sync::{Arc, Mutex};
 use crate::model::metadata::base::BaseMetadata;
 use crate::model::file::base_file::File; // Import File from the file module
 use crate::model::folder::base_folder::Folder; // Import Folder from the folder module
-use serde::{Serialize, Deserialize};
 /// PathType enum to differentiate between Files, Folders, and None
 #[derive(Clone, Debug)]
 pub enum PathType {
@@ -21,7 +20,7 @@ impl fmt::Display for PathType {
                 write!(
                     f,
                     "File: {} (size: {} bytes)",
-                    file.name,
+                    file.metadata.name(),
                     file.metadata.size()
                 )
             }

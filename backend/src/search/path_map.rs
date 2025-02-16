@@ -6,6 +6,7 @@ use std::sync::{Arc, Mutex};
 // Import File and Folder structs
 use crate::model::file::base_file::File;
 use crate::model::folder::base_folder::Folder;
+use crate::model::metadata::base::BaseMetadata;
 
 // Import PathType enum
 use crate::model::path_type::PathType;
@@ -37,7 +38,7 @@ impl PathMap {
         match p {
             PathType::File(file_arc) => {
                 let file = file_arc.lock().unwrap();
-                let url = file.url.clone();
+                let url = file.metadata.path().to_string_lossy().into_owned();
                 // Check if file has an error based on the new metadata design.
                 if let Some(err) = &file.error {
                     self.bad_paths.insert(

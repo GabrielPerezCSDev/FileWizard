@@ -9,3 +9,6 @@ pub mod path_type;
 
 // Module for handling metadata extraction for files and folders
 pub mod metadata;
+
+//Module for handling validation of foles and folder names 
+pub mod validation;

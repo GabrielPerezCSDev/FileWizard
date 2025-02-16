@@ -1,12 +1,8 @@
 use crate::search::path_map::PathMap;
-use crate::model::path_type::PathType;
 use crate::model::folder::base_folder::Folder; // Folder is defined in model/folder/base_folder.rs
-use crate::model::file::base_file::File;
 use std::sync::{Mutex, Arc};
 use std::collections::HashMap;
 use std::path::PathBuf; // Bring PathBuf into scope
-use rand::prelude::SliceRandom;
-use rand::thread_rng;
 
 #[derive(Debug)]
 pub struct Search {
