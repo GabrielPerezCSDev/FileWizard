@@ -4,58 +4,56 @@ use std::io;
 use std::os::windows::ffi::OsStrExt;
 use std::time::SystemTime;
 use crate::model::metadata::base::BaseMetadata;
-use super::base_file::File as BaseFile;
+//use super::base_file::File as BaseFile;
 use super::base_file::BaseFileOps;
-use crate::model::folder::base_folder::Folder;
-use std::sync::{Arc, Mutex};
 use crate::model::metadata::windows::WindowsMetadata;
 use std::path::PathBuf;
+use crate::model::file::File;
+use crate::model::metadata::base::MetadataError;
 
 #[derive(Debug, Clone)]
 pub struct WindowsFile {
-    base: BaseFile,
-    metadata: WindowsMetadata,
+    file: File<WindowsMetadata>,
 }
 
 impl WindowsFile {
-    pub fn new(path: &Path, parent: Option<Arc<Mutex<Folder>>>) -> Self {
-        let base = BaseFile::new(path, parent);
-        
-        // Create Windows-specific metadata
-        let (metadata, _error) = match WindowsMetadata::new(path) {
-            Ok(meta) => (meta, None),
+    pub fn new(path: &Path, parent: Option<PathBuf>) -> Self {
+        // Create the metadata in the OS-specific implementation
+        let metadata = match WindowsMetadata::new(path) {
+            Ok(m) => m,
             Err(e) => {
-                let common = WindowsMetadata::default_instance(path, &base.metadata.name());
-                (common, Some(format!("{:?}", e)))
+                let name = path.file_name()
+                    .and_then(|os_str| os_str.to_str())
+                    .unwrap_or("")
+                    .to_string();
+                eprintln!("WindowsMetadata error for '{}': {:?}", name, e);
+                WindowsMetadata::default_instance(path, &name)
             }
         };
 
         WindowsFile {
-            base,
-            metadata,
+            file: File::new(parent, metadata),  // Pass the created metadata
         }
     }
 
+    // Windows-specific methods
     pub fn set_read_only(&mut self, read_only: bool) -> io::Result<()> {
-        let path = self.base.metadata.path();
-        let metadata = fs::metadata(&path)?; // Pass reference to avoid moving
+        let path = self.get_metadata().path();
+        let metadata = fs::metadata(&path)?;
         let mut perms = metadata.permissions();
         perms.set_readonly(read_only);
-        fs::set_permissions(&path, perms)?; // Use reference again
-        self.metadata.set_read_only(read_only);
+        fs::set_permissions(&path, perms)?;
+
+        self.get_metadata_mut().set_read_only(read_only);
         Ok(())
     }
 
     pub fn set_hidden(&mut self, hidden: bool) -> io::Result<()> {
-        let path = self.base.metadata.path();
-        let attrs = self.metadata.raw_attributes();
-        
-        let new_attrs = if hidden {
-            attrs | 0x2
-        } else {
-            attrs & !0x2
-        };
-        
+        let path = self.get_metadata().path();
+        let attrs = self.get_metadata().raw_attributes();
+
+        let new_attrs = if hidden { attrs | 0x2 } else { attrs & !0x2 };
+
         unsafe {
             if winapi::um::fileapi::SetFileAttributesW(
                 path.as_os_str().encode_wide().chain(Some(0)).collect::<Vec<_>>().as_ptr(),
@@ -64,21 +62,17 @@ impl WindowsFile {
                 return Err(io::Error::last_os_error());
             }
         }
-        
-        self.metadata.set_hidden(hidden);
+
+        self.get_metadata_mut().set_hidden(hidden);
         Ok(())
     }
 
     pub fn set_system(&mut self, system: bool) -> io::Result<()> {
-        let path = self.base.metadata.path();
-        let attrs = self.metadata.raw_attributes();
-        
-        let new_attrs = if system {
-            attrs | 0x4
-        } else {
-            attrs & !0x4
-        };
-        
+        let path = self.get_metadata().path();
+        let attrs = self.get_metadata().raw_attributes();
+
+        let new_attrs = if system { attrs | 0x4 } else { attrs & !0x4 };
+
         unsafe {
             if winapi::um::fileapi::SetFileAttributesW(
                 path.as_os_str().encode_wide().chain(Some(0)).collect::<Vec<_>>().as_ptr(),
@@ -87,140 +81,155 @@ impl WindowsFile {
                 return Err(io::Error::last_os_error());
             }
         }
-        
-        self.metadata.set_system(system);
+
+        self.get_metadata_mut().set_system(system);
         Ok(())
-    }
-
-    pub fn get_formatted_metadata(&self) -> String {
-        self.metadata.formatted_metadata()
-    }
-
-    // Getters
-    pub fn get_name(&self) -> String {
-        self.metadata.name()
-    }
-
-    pub fn get_path(&self) -> PathBuf {
-        self.metadata.path()
-    }
-
-    pub fn get_extension(&self) -> String {
-        self.metadata.extension()
-    }
-
-    pub fn has_error(&self) -> bool {
-        self.base.error.is_some()
-    }
-
-    pub fn get_error(&self) -> Option<String> {
-        self.base.error.clone()
     }
 
     // Windows-specific getters
     pub fn is_read_only(&self) -> bool {
-        self.metadata.is_read_only()
+        self.get_metadata().is_read_only()
     }
 
     pub fn is_hidden(&self) -> bool {
-        self.metadata.is_hidden()
+        self.get_metadata().is_hidden()
     }
 
     pub fn is_system(&self) -> bool {
-        self.metadata.is_system()
+        self.get_metadata().is_system()
     }
 
     pub fn is_archive(&self) -> bool {
-        self.metadata.is_archive()
+        self.get_metadata().is_archive()
     }
+
 }
 
-impl BaseFileOps for WindowsFile {
+impl BaseFileOps<WindowsMetadata> for WindowsFile {
+    fn get_metadata(&self) -> &WindowsMetadata {
+        self.file.get_metadata()
+    }
 
-    fn is_read_only(&self) -> bool {
-        let path = self.base.metadata.path();
-        // If retrieving metadata fails, assume not read-only.
-        fs::metadata(path)
-            .map(|metadata| metadata.permissions().readonly())
-            .unwrap_or(false)
+    fn get_metadata_mut(&mut self) -> &mut WindowsMetadata {
+        self.file.get_metadata_mut()
     }
 
     fn modify_name(&mut self, new_name: String) -> io::Result<()> {
-        println!("\n\n\nCalled modify_name in windows_fille.rs");
         if self.is_read_only() {
             return Err(io::Error::new(
                 io::ErrorKind::PermissionDenied,
-                "Cannot modify a read-only file",
+                "Cannot modify a read-only file"
             ));
         }
-        self.base.modify_name(new_name.clone())?;
-        // Now update the Windows-specific metadata as well:
-        self.metadata.set_name(new_name);
-        self.metadata.set_path(self.base.metadata.path().clone());
-        Ok(())
+        self.file.modify_name(new_name)
     }
 
     fn modify_extension(&mut self, new_extension: String) -> io::Result<()> {
         if self.is_read_only() {
             return Err(io::Error::new(
                 io::ErrorKind::PermissionDenied,
-                "Cannot modify a read-only file",
+                "Cannot modify a read-only file"
             ));
         }
-        self.base.modify_extension(new_extension.clone())?;
-        self.metadata.set_extension(new_extension);
-        self.metadata.set_path(self.base.metadata.path().clone());
-        Ok(())
+        self.file.modify_extension(new_extension)
     }
 
     fn update_size(&mut self) -> io::Result<()> {
-        self.base.update_size()?;
-        Ok(())
+        self.file.update_size()
+    }
+
+    fn set_name(&mut self, name: String) {
+        self.file.set_name(name)
+    }
+
+    fn set_path(&mut self, path: PathBuf) {
+        self.file.set_path(path)
+    }
+
+    fn set_size(&mut self, size: u64) {
+        self.file.set_size(size)
     }
 }
 
 impl BaseMetadata for WindowsFile {
     fn size(&self) -> u64 {
-        self.metadata.size()
+        self.file.get_metadata().size()
     }
 
     fn children(&self) -> Option<u64> {
-        self.metadata.children()
+        self.file.get_metadata().children()
     }
 
     fn created(&self) -> SystemTime {
-        self.metadata.created()
+        self.file.get_metadata().created()
     }
 
     fn modified(&self) -> SystemTime {
-        self.metadata.modified()
+        self.file.get_metadata().modified()
     }
 
     fn is_directory(&self) -> bool {
-        self.metadata.is_directory()
+        self.file.get_metadata().is_directory()
     }
 
     fn is_file(&self) -> bool {
-        self.metadata.is_file()
+        self.file.get_metadata().is_file()
     }
 
     fn name(&self) -> String {
-        self.metadata.name()
+        self.file.get_metadata().name()
     }
 
     fn path(&self) -> PathBuf {
-        self.metadata.path()
+        self.file.get_metadata().path()
     }
 
     fn extension(&self) -> String {
-        self.metadata.extension()
+        self.file.get_metadata().extension()
     }
 
     fn exists(&self) -> bool {
-        self.metadata.exists()
+        self.file.get_metadata().exists()
     }
 
     fn formatted_metadata(&self) -> String {
-        self.metadata.formatted_metadata()
+        self.file.get_metadata().formatted_metadata()
+    }
+
+    // Add the required setters
+    fn set_size(&mut self, new_size: u64) {
+        self.file.get_metadata_mut().set_size(new_size);
+    }
+
+    fn set_children(&mut self, new_children: u64) {
+        self.file.get_metadata_mut().set_children(new_children);
+    }
+
+    fn set_modified(&mut self, new_modified: SystemTime) {
+        self.file.get_metadata_mut().set_modified(new_modified);
+    }
+
+    fn set_exists(&mut self, exists: bool) {
+        self.file.get_metadata_mut().set_exists(exists);
+    }
+
+    fn set_name(&mut self, new_name: String) {
+        self.file.get_metadata_mut().set_name(new_name);
+    }
+
+    fn set_extension(&mut self, new_extension: String) {
+        self.file.get_metadata_mut().set_extension(new_extension);
+    }
+
+    fn set_path(&mut self, new_path: PathBuf) {
+        self.file.get_metadata_mut().set_path(new_path);
+    }
+
+    // Constructor implementation
+    fn new(path: &Path) -> Result<Self, MetadataError> {
+        let metadata = WindowsMetadata::new(path)?;
+        Ok(WindowsFile {
+            file: File::new(None, metadata)
+        })
     }
 }

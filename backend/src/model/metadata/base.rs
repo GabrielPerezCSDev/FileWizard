@@ -25,6 +25,7 @@ impl From<std::time::SystemTimeError> for MetadataError {
 
 // Base metadata trait that all platforms must implement
 pub trait BaseMetadata {
+    // Getters
     fn size(&self) -> u64;
     fn children(&self) -> Option<u64>;
     fn created(&self) -> SystemTime;
@@ -36,6 +37,17 @@ pub trait BaseMetadata {
     fn extension(&self) -> String;
     fn exists(&self) -> bool;
     fn formatted_metadata(&self) -> String;
+
+    // Add required setters
+    fn set_size(&mut self, new_size: u64);
+    fn set_children(&mut self, new_children: u64);
+    fn set_modified(&mut self, new_modified: SystemTime);
+    fn set_exists(&mut self, exists: bool);
+    fn set_name(&mut self, new_name: String);
+    fn set_extension(&mut self, new_extension: String);
+    fn set_path(&mut self, new_path: PathBuf);
+    // Add a constructor requirement
+    fn new(path: &Path) -> Result<Self, MetadataError> where Self: Sized;
 }
 
 // Common metadata struct that implements BaseMetadata
@@ -112,42 +124,6 @@ impl CommonMetadata {
         }
     }
 
-    /// Setter to update the file size.
-    pub fn set_size(&mut self, new_size: u64) {
-        self.size = new_size;
-    }
-
-    /// Setter to update the children count (only applicable for directories).
-    pub fn set_children(&mut self, new_children: u64) {
-        if self.is_dir {
-            self.children = Some(new_children);
-        }
-    }
-
-    /// Setter to update the modified time.
-    pub fn set_modified(&mut self, new_modified: SystemTime) {
-        self.modified = new_modified;
-    }
-
-    /// Setter to update the exists flag.
-    pub fn set_exists(&mut self, exists: bool) {
-        self.exists = exists;
-    }
-
-    /// Setter to update the file name.
-    pub fn set_name(&mut self, new_name: String) {
-        self.name = new_name;
-    }
-
-    /// Setter to update the file extension.
-    pub fn set_extension(&mut self, new_extension: String) {
-        self.extension = new_extension;
-    }
-
-    pub fn set_path(&mut self, new_path: PathBuf) {
-        self.path = new_path;
-    }
-
 }
 
 impl BaseMetadata for CommonMetadata {
@@ -191,6 +167,44 @@ impl BaseMetadata for CommonMetadata {
         self.extension.clone()
     }
 
+    // setter implementations
+    fn set_size(&mut self, new_size: u64) {
+        self.size = new_size;
+    }
+
+    fn set_children(&mut self, new_children: u64) {
+        if self.is_dir {
+            self.children = Some(new_children);
+        }
+    }
+
+    fn set_modified(&mut self, new_modified: SystemTime) {
+        self.modified = new_modified;
+    }
+
+    fn set_exists(&mut self, exists: bool) {
+        self.exists = exists;
+    }
+
+    fn set_name(&mut self, new_name: String) {
+        self.name = new_name;
+    }
+
+    fn set_extension(&mut self, new_extension: String) {
+        self.extension = new_extension;
+    }
+
+    fn set_path(&mut self, new_path: PathBuf) {
+        self.path = new_path;
+    }
+
+
+
+    //constructor implementation
+    fn new(path: &Path) -> Result<Self, MetadataError> {
+        CommonMetadata::new(path)
+    }
+
     fn formatted_metadata(&self) -> String {
         format!(
             "
@@ -211,7 +225,7 @@ impl BaseMetadata for CommonMetadata {
             self.children,
             self.created,
             self.modified,
-            self.exists
+            self.exists,
         )
     }
 }

@@ -24,13 +24,13 @@ mod file_tests {
         let test_content = b"Hello, World!";
         let file_path = create_test_file(&temp_dir, "test.txt", test_content);
 
-        let file = File::new(&file_path, None);
+        let file = File::new(&file_path, None); // Ensure None is correctly passed as an Option<PathBuf>
 
         // Now that name and url are stored in metadata, we access them via metadata getters.
         assert_eq!(file.metadata.name(), "test.txt");
-        assert_eq!(file.metadata.path().to_string_lossy(), file_path.to_string_lossy());
+        assert_eq!(file.metadata.path(), file_path);
         assert!(file.error.is_none());
-        assert!(file.parent.is_none());
+        assert!(file.parent.is_none()); // Since we passed None, this should be correct
     }
 
     #[test]
@@ -40,13 +40,15 @@ mod file_tests {
         let test_content = b"Hello, World!";
         let file_path = create_test_file(&temp_dir, "test.txt", test_content);
 
-        let mut file = File::new(&file_path, None);
+        let mut file = File::new(&file_path, None); // Ensure correct instantiation
         file.modify_name("renamed.txt".to_string()).expect("Failed to rename file");
+
+        let new_path = file.metadata.path(); // Get updated path
 
         // Check that the metadata's name has been updated.
         assert_eq!(file.metadata.name(), "renamed.txt");
         // Verify that the new path (stored in metadata) exists.
-        assert!(file.metadata.path().as_path().exists());
+        assert!(new_path.exists(), "New file path should exist");
         // The original file path should no longer exist.
         assert!(!file_path.exists(), "Old file should not exist");
     }
@@ -58,14 +60,15 @@ mod file_tests {
         let test_content = b"Hello, World!";
         let file_path = create_test_file(&temp_dir, "test.txt", test_content);
 
-        let mut file = File::new(&file_path, None);
+        let mut file = File::new(&file_path, None); // Ensure correct instantiation
         file.modify_extension("md".to_string()).expect("Failed to change extension");
+
+        let new_path = file.metadata.path(); // Get updated path
 
         // Check that the metadata's extension is updated.
         assert_eq!(file.metadata.extension(), "md", "Extension should be updated to 'md'");
 
         // Check that the new path stored in metadata exists.
-        let new_path = file.metadata.path();
         assert!(new_path.exists(), "New file path should exist");
 
         // The original file should no longer exist.
@@ -92,10 +95,13 @@ mod file_tests {
         let mut fs_file = FsFile::create(&file_path).expect("Failed to open file");
         fs_file.write_all(b"Hello, World!").expect("Failed to write new content");
 
+        // Ensure the file is actually written before updating metadata
+        fs_file.sync_all().expect("Failed to sync file system");
+
         // Update size
         file.update_size().expect("Failed to update size");
 
-        assert_eq!(file.metadata.size(), 13); // "Hello, World!" is 13 bytes
+        assert_eq!(file.metadata.size(), 13, "File size should be updated to 13 bytes");
     }
 
     #[test]
@@ -110,19 +116,24 @@ mod file_tests {
         let mut file = File::new(&file_path, None);
 
         // Test invalid name modification.
-        // Assuming "invalid/name.txt" is an invalid filename.
+        #[cfg(windows)]
+        let invalid_name = "invalid|name.txt"; // Windows has stricter invalid chars
+        #[cfg(unix)]
+        let invalid_name = "invalid/name.txt"; // Unix only forbids '/'
+
         assert!(
-            file.modify_name("invalid/name.txt".to_string()).is_err(),
+            file.modify_name(invalid_name.to_string()).is_err(),
             "Should reject invalid name modification"
         );
 
         // Test modifying a non-existent file.
         fs::remove_file(&file_path).expect("Failed to remove file");
+
         assert!(file.update_size().is_err(), "update_size should error on non-existent file");
+
         assert!(
             file.modify_extension("md".to_string()).is_err(),
             "modify_extension should error on non-existent file"
         );
     }
-    
 }

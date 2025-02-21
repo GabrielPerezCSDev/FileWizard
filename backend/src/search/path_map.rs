@@ -1,28 +1,31 @@
 // path_map.rs
 
-use std::collections::HashMap;
-use std::sync::{Arc, Mutex};
+//use std::collections::HashMap;
+//use std::sync::{Arc, Mutex};
 
 // Import File and Folder structs
-use crate::model::file::base_file::File;
-use crate::model::folder::base_folder::Folder;
-use crate::model::metadata::base::BaseMetadata;
+//use crate::model::file::base_file::File;
+//use crate::model::folder::base_folder::Folder;
+//use crate::model::metadata::base::BaseMetadata;
 
 // Import PathType enum
-use crate::model::path_type::PathType;
+//use crate::model::file_system::path_type::PathType;
 
 /// `PathMap` is a custom data structure that manages mappings between URLs and their corresponding `Folder` and `File` entities.
 #[derive(Debug)]
 pub struct PathMap {
+    /*
     /// HashMap storing Folder instances with their URLs as keys.
     folders: HashMap<String, Arc<Mutex<Folder>>>,
     /// HashMap storing File instances with their URLs as keys.
     files: HashMap<String, Arc<Mutex<File>>>,
     /// HashMap to track files or folders that had errors during metadata retrieval.
     bad_paths: HashMap<String, (Arc<Mutex<PathType>>, String)>,
+    */
 }
 
 impl PathMap {
+    /*
     /// Creates a new instance of `PathMap` with empty HashMaps.
     pub fn new() -> Self {
         PathMap {
@@ -50,7 +53,7 @@ impl PathMap {
             }
             PathType::Folder(folder_arc) => {
                 let folder = folder_arc.lock().unwrap();
-                let url = folder.url.clone();
+                let url = folder.metadata.path().to_string_lossy().into_owned();
                 // For folders, you might check for errors similarly if needed.
                 self.folders.insert(url, Arc::clone(&folder_arc));
             }
@@ -113,4 +116,5 @@ impl PathMap {
         self.files.clear();
         self.bad_paths.clear();
     }
+    */
 }

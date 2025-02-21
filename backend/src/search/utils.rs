@@ -1,11 +1,12 @@
-use crate::search::path_map::PathMap;
-use crate::model::folder::base_folder::Folder; // Folder is defined in model/folder/base_folder.rs
-use std::sync::{Mutex, Arc};
-use std::collections::HashMap;
-use std::path::PathBuf; // Bring PathBuf into scope
+//use crate::search::path_map::PathMap;
+//use crate::model::folder::base_folder::Folder; // Folder is defined in model/folder/base_folder.rs
+//use std::sync::{Mutex, Arc};
+//use std::collections::HashMap;
+//use std::path::PathBuf; // Bring PathBuf into scope
 
 #[derive(Debug)]
 pub struct Search {
+    /*
     /// The root search directory as a PathBuf.
     pub root_search_directory: Option<PathBuf>,
     /// The root Folder node for the search tree.
@@ -16,6 +17,7 @@ pub struct Search {
     pub path_map: Mutex<PathMap>,
     /// A mapping used to track frontier folders during the search.
     pub frontier_map: Mutex<HashMap<String, Vec<Arc<Mutex<Folder>>>>>,
+    */
 }
 
 impl Search {

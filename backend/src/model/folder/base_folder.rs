@@ -1,179 +1,281 @@
 use std::path::Path;
-use std::sync::{Arc, Mutex};
 use std::io;
 use std::fs;
-use crate::model::metadata::base::{BaseMetadata, CommonMetadata};
-use crate::model::path_type::PathType;
+use std::collections::HashSet;
+use crate::model::metadata::base::BaseMetadata;
+use crate::model::file_system::path_type::PathType;
+use crate::model::validation;
+use std::path::PathBuf;
+use crate::model::file::base_file::BaseFileOps;
 
-pub trait BaseFolderOps {
-    /// Renames the folder to the new name.
+pub trait BaseFolderOps<T: BaseMetadata> {
+    /// Renames the folder to a new name on disk
     fn modify_name(&mut self, new_name: String) -> io::Result<()>;
-    
-    /// Adds a child (either a File or Folder) to the folder.
-    fn add_child(&mut self, child: crate::model::path_type::PathType);
-    
-    /// Removes a child based on its URL.
-    fn remove_child(&mut self, child_url: &str) -> Option<crate::model::path_type::PathType>;
-    
-    /// return formatted metadata
+
+    /// Adds a child (file or folder) to this folder
+    fn add_child(&mut self, child: PathType) -> io::Result<()>;
+
+    /// Removes a child, returning the child's path if found
+    fn remove_child(&mut self, child: PathType) -> Result<PathBuf, io::Error>;
+
+    /// Returns a formatted string with the folder's metadata
     fn get_formatted_metadata(&self) -> String;
-    
-    fn add_size(&mut self, size: u64);
 
-    fn subtract_size(&mut self, size: u64);
-    
+    /// Returns the metadata implementation
+    fn get_metadata(&self) -> &T;
+    fn get_metadata_mut(&mut self) -> &mut T;
+
+    /// Increase or decrease the folder's total size
+    fn update_size(&mut self, delta: i64);  // Combined add/subtract with signed integer
+
+    //setters
+    fn set_name(&mut self, name: String);
+    fn set_path(&mut self, path: PathBuf);
+    fn set_size(&mut self, size: u64);
+    fn set_children(&mut self, count: u64);
 }
 
-// The Folder struct definition using the new metadata type.
 #[derive(Clone, Debug)]
-pub struct Folder {
-    pub name: String,
-    pub url: String,
-    pub children: Vec<PathType>, // Children can be files or folders.
-    pub parent: Option<Arc<Mutex<Folder>>>,
-    pub metadata: CommonMetadata,
-    pub index: i32,
+pub struct Folder<T: BaseMetadata> {
+    children: HashSet<PathBuf>,
+    parent: Option<PathBuf>,
+    metadata: T,
+    index: i32,
 }
 
-impl Folder {
-    // Constructor to create a new Folder using the CommonMetadata type.
+#[derive(Debug)]
+pub enum FolderError {
+    DuplicateChild(String),    // Child with this name already exists
+    CircularReference(String), // Would create a circular reference
+    InvalidPath(String),       // Path is not a valid child of this folder
+}
+
+#[derive(Debug)]
+pub enum RemoveError {
+    NotFound(String),
+    InvalidChild(String),
+    PermissionDenied(String),
+}
+
+
+impl From<FolderError> for io::Error {
+    fn from(error: FolderError) -> Self {
+        match error {
+            FolderError::DuplicateChild(msg) => io::Error::new(io::ErrorKind::AlreadyExists, msg),
+            FolderError::CircularReference(msg) => io::Error::new(io::ErrorKind::InvalidInput, msg),
+            FolderError::InvalidPath(msg) => io::Error::new(io::ErrorKind::InvalidInput, msg),
+        }
+    }
+}
+
+impl From<RemoveError> for io::Error {
+    fn from(error: RemoveError) -> Self {
+        match error {
+            RemoveError::NotFound(msg) => io::Error::new(io::ErrorKind::NotFound, msg),
+            RemoveError::InvalidChild(msg) => io::Error::new(io::ErrorKind::InvalidInput, msg),
+            RemoveError::PermissionDenied(msg) => io::Error::new(io::ErrorKind::PermissionDenied, msg),
+        }
+    }
+}
+
+
+impl<T: BaseMetadata> Folder<T> {
+    /// Creates a new Folder<T> instance
     pub fn new(
-        path: &Path,
-        parent: Option<Arc<Mutex<Folder>>>,
-        pwd_index: i32
-    ) -> Arc<Mutex<Self>> {
-        let name = if path.parent().is_none() {
-            // Root folder: use the full path string.
-            path.to_str().unwrap_or("").to_string()
-        } else {
-            path.file_name()
-                .and_then(|os_str| os_str.to_str())
-                .unwrap_or("")
-                .to_string()
-        };
-        let url = path.to_str().unwrap_or("").to_string();
-
-        // Attempt to create metadata using the new CommonMetadata::new.
-        // If it fails, create a default metadata instance with exists set to false.
-        let metadata = match CommonMetadata::new(path) {
-            Ok(meta) => meta,
-            Err(e) => {
-                eprintln!("Error retrieving metadata for {}: {:?}", name, e);
-                CommonMetadata::default_instance(path, &name)
-            }
-        };
-
-        // Create and return the Folder wrapped in Arc<Mutex>.
-        let folder = Folder {
-            name,
-            url,
-            children: Vec::new(),
+        parent: Option<PathBuf>,
+        pwd_index: i32,
+        metadata: T
+    ) -> Self {
+        Folder {
             parent,
-            metadata,
+            children: HashSet::new(),
+            metadata,          // Single metadata instance
             index: pwd_index,
-        };
-
-        Arc::new(Mutex::new(folder))
-    }
-
-    pub fn modify_name(&mut self, new_name: String) -> io::Result<()> {
-        let current_path = Path::new(&self.url);
-        let parent_dir = current_path.parent().ok_or_else(|| {
-            io::Error::new(io::ErrorKind::InvalidInput, "No parent directory available")
-        })?;
-        let new_path = parent_dir.join(&new_name);
-        fs::rename(current_path, &new_path)?;
-        
-        self.name = new_name.clone();
-        self.url = new_path.to_string_lossy().into_owned();
-        self.metadata.set_name(new_name);
-        Ok(())
-    }
-
-    pub fn add_size(&mut self, size: u64) {
-        let current_size = self.metadata.size();
-        self.metadata.set_size(current_size + size);
-    }
-
-    pub fn subtract_size(&mut self, size: u64){
-        let current_size = self.metadata.size();
-        self.metadata.set_size(current_size - size);
-    }
-
-    pub fn add_child(&mut self, child: PathType) {
-        // Increase the number of children.
-        self.children.push(child.clone());
-        self.metadata.set_children(self.metadata.children().unwrap_or(0) + 1);
-
-        // Determine the size of the child from its metadata.
-        let child_size = match child {
-            PathType::File(ref file_arc) => {
-                let file = file_arc.lock().unwrap();
-                file.metadata.size()
-            }
-            PathType::Folder(ref folder_arc) => {
-                let folder = folder_arc.lock().unwrap();
-                folder.metadata.size()
-            }
-            PathType::None => 0,
-        };
-
-        // Increase folder's size by the child's size.
-        self.add_size(child_size);
-    }
-
-    pub fn remove_child(&mut self, target: &PathType) -> Option<PathType> {
-        // First, determine the URL from the target PathType.
-        let target_url = match target {
-            PathType::File(file_arc) => {
-                let file = file_arc.lock().unwrap();
-                file.metadata.path().to_string_lossy().into_owned()
-            }
-            PathType::Folder(folder_arc) => {
-                let folder = folder_arc.lock().unwrap();
-                folder.metadata.path().to_string_lossy().into_owned()
-            }
-            PathType::None => return None,
-        };
-    
-        if let Some(pos) = self.children.iter().position(|child| {
-            match child {
-                PathType::File(file_arc) => {
-                    let file = file_arc.lock().unwrap();
-                    file.metadata.path().to_string_lossy() == target_url
-                }
-                PathType::Folder(folder_arc) => {
-                    let folder = folder_arc.lock().unwrap();
-                    folder.metadata.path().to_string_lossy() == target_url
-                }
-                PathType::None => false,
-            }
-        }) {
-            let removed_child = self.children.remove(pos);
-            // Update children count and size based on the removed child.
-            self.metadata.set_children(self.metadata.children().unwrap_or(0).saturating_sub(1));
-    
-            let child_size = match &removed_child {
-                PathType::File(file_arc) => {
-                    let file = file_arc.lock().unwrap();
-                    file.metadata.size()
-                }
-                PathType::Folder(folder_arc) => {
-                    let folder = folder_arc.lock().unwrap();
-                    folder.metadata.size()
-                }
-                PathType::None => 0,
-            };
-            self.subtract_size(child_size);
-            Some(removed_child)
-        } else {
-            None
         }
     }
 
-    pub fn get_formatted_metadata(&self) -> String {
+    // Simple getters
+    pub fn get_parent(&self) -> Option<&PathBuf> {
+        self.parent.as_ref()
+    }
+
+    pub fn get_children(&self) -> &HashSet<PathBuf> {
+        &self.children
+    }
+
+    pub fn get_index(&self) -> i32 {
+        self.index
+    }
+    
+    /// Access to the metadata
+    pub fn get_metadata(&self) -> &T {
+        &self.metadata
+    }
+
+    pub fn get_metadata_mut(&mut self) -> &mut T {
+        &mut self.metadata
+    }
+}
+
+impl<T: BaseMetadata> BaseFolderOps<T> for Folder<T> {
+    fn modify_name(&mut self, new_name: String) -> io::Result<()> {
+        validation::validate_path_name(&new_name)?;
+        let current_path = self.metadata.path();
+
+        let parent_dir = current_path
+            .parent()
+            .ok_or_else(|| io::Error::new(io::ErrorKind::InvalidInput, "No parent directory available"))?;
+
+        let new_path = parent_dir.join(&new_name);
+        fs::rename(&current_path, &new_path)?;
+
+        self.set_name(new_name);
+        self.set_path(new_path);
+        Ok(())
+    }
+
+    fn add_child(&mut self, child: PathType) -> io::Result<()> {
+        // Extract child's path + size
+        let (child_path, child_size) = match &child {
+            PathType::File(file) => {
+                (file.get_metadata().path().to_path_buf(), file.get_metadata().size())
+            },
+            PathType::Folder(folder) => {
+                (folder.get_metadata().path().to_path_buf(), folder.get_metadata().size())
+            },
+            PathType::None => return Ok(()),
+        };
+
+        // For duplicate detection
+        let child_name = child_path
+            .file_name()
+            .and_then(|n| n.to_str())
+            .ok_or_else(|| io::Error::new(io::ErrorKind::InvalidInput, "Invalid file name"))?;
+
+        // Validate path and check constraints
+        self.validate_child_path(&child_path)?;
+        self.check_duplicate(child_name)?;
+        self.check_circular_reference(&child_path)?;
+
+        // Insert path into the children set
+        if !self.children.insert(child_path) {
+            return Err(io::Error::new(io::ErrorKind::AlreadyExists, "Child already exists"));
+        }
+
+        // Update metadata
+        if let Some(current_children) = self.metadata.children() {
+            self.metadata.set_children(current_children + 1);
+        }
+        self.update_size(child_size as i64);
+
+        Ok(())
+    }
+
+    fn remove_child(&mut self, child: PathType) -> Result<PathBuf, io::Error> {
+        let (child_path, child_size) = match &child {
+            PathType::File(file) => {
+                (file.get_metadata().path().to_path_buf(), file.get_metadata().size())
+            },
+            PathType::Folder(folder) => {
+                (folder.get_metadata().path().to_path_buf(), folder.get_metadata().size())
+            },
+            PathType::None => return Err(io::Error::new(io::ErrorKind::InvalidInput, "Cannot remove None PathType")),
+        };
+    
+        if self.children.remove(&child_path) {
+            if let Some(current_children) = self.metadata.children() {
+                self.metadata.set_children(current_children.saturating_sub(1));
+            }
+            
+            // Update size using the size from PathType's metadata
+            self.update_size(-(child_size as i64));
+            
+            Ok(child_path)
+        } else {
+            Err(io::Error::new(io::ErrorKind::NotFound, "Child not found"))
+        }
+    }
+
+    fn get_formatted_metadata(&self) -> String {
         self.metadata.formatted_metadata()
     }
 
+     // New setter implementations that delegate to metadata
+     fn set_name(&mut self, name: String) {
+        self.metadata.set_name(name);
+    }
 
+    fn set_path(&mut self, path: PathBuf) {
+        self.metadata.set_path(path);
+    }
+
+    fn set_size(&mut self, size: u64) {
+        self.metadata.set_size(size);
+    }
+
+    fn set_children(&mut self, count: u64) {
+        self.metadata.set_children(count);
+    }
+
+    fn get_metadata(&self) -> &T {
+        &self.metadata
+    }
+
+    fn get_metadata_mut(&mut self) -> &mut T {
+        &mut self.metadata
+    }
+
+    fn update_size(&mut self, delta: i64) {
+        let current_size = self.metadata.size();
+        let new_size = if delta >= 0 {
+            current_size + delta as u64
+        } else {
+            current_size.saturating_sub((-delta) as u64)
+        };
+        self.set_size(new_size);
+    }
 }
+
+impl<T: BaseMetadata> Folder<T> {
+    /// Validates if a path is a valid child of this folder
+    fn validate_child_path(&self, child_path: &Path) -> Result<(), FolderError> {
+        let parent_path = self.metadata.path();
+        if !child_path.starts_with(&parent_path) {
+            return Err(FolderError::InvalidPath(
+                format!("Child path {:?} is not within parent folder {:?}", child_path, parent_path)
+            ));
+        }
+        if child_path.parent().map_or(false, |p| p != parent_path) {
+            return Err(FolderError::InvalidPath(
+                format!("Child path {:?} is not an immediate child of {:?}", child_path, parent_path)
+            ));
+        }
+        Ok(())
+    }
+
+    /// Checks for duplicate children
+    fn check_duplicate(&self, child_name: &str) -> Result<(), FolderError> {
+        if self.children.iter().any(|child_path| {
+            child_path.file_name()
+                .and_then(|os_str| os_str.to_str())
+                .map(|n| n == child_name)
+                .unwrap_or(false)
+        }) {
+            return Err(FolderError::DuplicateChild(
+                format!("Child with name '{}' already exists", child_name)
+            ));
+        }
+        Ok(())
+    }
+
+    /// Checks for circular references in folder structure
+    fn check_circular_reference(&self, child_path: &Path) -> Result<(), FolderError> {
+        if child_path == self.metadata.path() {
+            return Err(FolderError::CircularReference(
+                "Child path is the same as parent folder".to_string()
+            ));
+        }
+        Ok(())
+    }
+}
+

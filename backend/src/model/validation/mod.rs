@@ -32,53 +32,67 @@ impl From<FileNameError> for io::Error {
     }
 }
 
-#[cfg(windows)]
-pub fn validate_filename(name: &str) -> Result<(), FileNameError> {
-    // Windows-specific validation
-    const INVALID_CHARS: &[char] = &['<', '>', ':', '"', '/', '\\', '|', '?', '*'];
-    const RESERVED_NAMES: &[&str] = &[
-        "CON", "PRN", "AUX", "NUL",
-        "COM1", "COM2", "COM3", "COM4", "COM5", "COM6", "COM7", "COM8", "COM9",
-        "LPT1", "LPT2", "LPT3", "LPT4", "LPT5", "LPT6", "LPT7", "LPT8", "LPT9"
-    ];
+pub fn validate_path_name(name: &str) -> Result<(), FileNameError> {
+    #[cfg(windows)]
+    {
+        const INVALID_CHARS: &[char] = &['<', '>', ':', '"', '/', '\\', '|', '?', '*'];
+        const RESERVED_NAMES: &[&str] = &[
+            "CON", "PRN", "AUX", "NUL",
+            "COM1", "COM2", "COM3", "COM4", "COM5", "COM6", "COM7", "COM8", "COM9",
+            "LPT1", "LPT2", "LPT3", "LPT4", "LPT5", "LPT6", "LPT7", "LPT8", "LPT9"
+        ];
 
-    // Check for empty name
-    if name.is_empty() {
-        return Err(FileNameError::Empty);
+        if name.is_empty() {
+            return Err(FileNameError::Empty);
+        }
+
+        if name.len() > 255 {
+            return Err(FileNameError::TooLong(name.len()));
+        }
+
+        if name.ends_with(' ') || name.ends_with('.') {
+            return Err(FileNameError::InvalidCharacters(
+                "Path name cannot end with a space or period".to_string()
+            ));
+        }
+
+        if name.starts_with(' ') {
+            return Err(FileNameError::InvalidCharacters(
+                "Path name cannot start with a space".to_string()
+            ));
+        }
+
+        if let Some(invalid_char) = name.chars().find(|c| INVALID_CHARS.contains(c)) {
+            return Err(FileNameError::InvalidCharacters(
+                format!("Character '{}' is not allowed in Windows path names", invalid_char)
+            ));
+        }
+
+        let name_upper = name.to_uppercase();
+        for reserved in RESERVED_NAMES {
+            if name_upper == *reserved || name_upper.starts_with(&format!("{}.", reserved)) {
+                return Err(FileNameError::ReservedName(
+                    format!("'{}' is a reserved name in Windows", name)
+                ));
+            }
+        }
     }
 
-    // Check length
-    if name.len() > 255 {
-        return Err(FileNameError::TooLong(name.len()));
-    }
+    #[cfg(unix)]
+    {
+        const INVALID_CHARS: &[char] = &['/']; 
 
-    // Check for trailing spaces or periods
-    if name.ends_with(' ') || name.ends_with('.') {
-        return Err(FileNameError::InvalidCharacters(
-            "Filename cannot end with a space or period".to_string()
-        ));
-    }
+        if name.is_empty() {
+            return Err(FileNameError::Empty);
+        }
 
-    // Check for leading spaces
-    if name.starts_with(' ') {
-        return Err(FileNameError::InvalidCharacters(
-            "Filename cannot start with a space".to_string()
-        ));
-    }
+        if name.len() > 255 {
+            return Err(FileNameError::TooLong(name.len()));
+        }
 
-    // Check for invalid characters
-    if let Some(invalid_char) = name.chars().find(|c| INVALID_CHARS.contains(c)) {
-        return Err(FileNameError::InvalidCharacters(
-            format!("Character '{}' is not allowed in Windows file names", invalid_char)
-        ));
-    }
-
-    // Check for reserved names (case insensitive)
-    let name_upper = name.to_uppercase();
-    for reserved in RESERVED_NAMES {
-        if name_upper == *reserved || name_upper.starts_with(&format!("{}.", reserved)) {
-            return Err(FileNameError::ReservedName(
-                format!("'{}' is a reserved name in Windows", name)
+        if let Some(invalid_char) = name.chars().find(|c| INVALID_CHARS.contains(c)) {
+            return Err(FileNameError::InvalidCharacters(
+                format!("Character '{}' is not allowed in Unix path names", invalid_char)
             ));
         }
     }
@@ -86,28 +100,3 @@ pub fn validate_filename(name: &str) -> Result<(), FileNameError> {
     Ok(())
 }
 
-
-#[cfg(unix)]
-pub fn validate_filename(name: &str) -> Result<(), FileNameError> {
-    // Unix-specific validation
-    const INVALID_CHARS: &[char] = &['/'];  // Forward slash is the only invalid character
-
-    // Check for empty name
-    if name.is_empty() {
-        return Err(FileNameError::Empty);
-    }
-
-    // Check length (most Unix filesystems have a limit of 255)
-    if name.len() > 255 {
-        return Err(FileNameError::TooLong(name.len()));
-    }
-
-    // Check for invalid characters
-    if let Some(invalid_char) = name.chars().find(|c| INVALID_CHARS.contains(c)) {
-        return Err(FileNameError::InvalidCharacters(
-            format!("Character '{}' is not allowed in Unix file names", invalid_char)
-        ));
-    }
-
-    Ok(())
-}
